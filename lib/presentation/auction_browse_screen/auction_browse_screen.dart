@@ -4,10 +4,8 @@ import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
 import '../../models/auction_item.dart';
-import '../../routes/app_routes.dart';
 import '../../services/auction_service.dart';
 import '../../services/auth_service.dart';
-import '../../theme/app_theme.dart';
 import '../../widgets/custom_bottom_bar.dart';
 import './widgets/auction_grid_widget.dart';
 import './widgets/category_chip_widget.dart';

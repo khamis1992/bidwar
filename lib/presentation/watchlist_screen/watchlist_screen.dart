@@ -4,9 +4,7 @@ import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
 import '../../models/auction_item.dart';
-import '../../routes/app_routes.dart';
 import '../../services/auction_service.dart';
-import '../../theme/app_theme.dart';
 import '../../widgets/custom_bottom_bar.dart';
 import '../auction_browse_screen/widgets/auction_card_widget.dart';
 

@@ -8,6 +8,9 @@ import '../presentation/auction_browse_screen/auction_browse_screen.dart';
 import '../presentation/auction_detail_screen/auction_detail_screen.dart';
 import '../presentation/registration_screen/registration_screen.dart';
 import '../presentation/watchlist_screen/watchlist_screen.dart';
+import '../presentation/admin_dashboard_overview/admin_dashboard_overview.dart';
+import '../presentation/auction_management_panel/auction_management_panel.dart';
+import '../presentation/user_management_console/user_management_console.dart';
 
 class AppRoutes {
   // TODO: Add your routes here
@@ -21,18 +24,24 @@ class AppRoutes {
   static const String auctionDetail = '/auction-detail-screen';
   static const String registration = '/registration-screen';
   static const String watchlist = '/watchlist-screen';
+  static const String adminDashboardOverview = '/admin-dashboard-overview';
+  static const String auctionManagementPanel = '/auction-management-panel';
+  static const String userManagementConsole = '/user-management-console';
 
-  static Map<String, WidgetBuilder> routes = {
-    initial: (context) => const SplashScreen(),
-    splash: (context) => const SplashScreen(),
-    creditManagement: (context) => const CreditManagementScreen(),
-    userProfile: (context) => const UserProfileScreen(),
-    login: (context) => const LoginScreen(),
-    onboardingFlow: (context) => const OnboardingFlow(),
-    auctionBrowse: (context) => const AuctionBrowseScreen(),
-    auctionDetail: (context) => const AuctionDetailScreen(),
-    registration: (context) => const RegistrationScreen(),
-    watchlist: (context) => const WatchlistScreen(),
-    // TODO: Add your other routes here
-  };
+  static Map<String, WidgetBuilder> get routes => {
+        initial: (context) => const SplashScreen(),
+        splash: (context) => const SplashScreen(),
+        creditManagement: (context) => const CreditManagementScreen(),
+        userProfile: (context) => const UserProfileScreen(),
+        login: (context) => const LoginScreen(),
+        onboardingFlow: (context) => const OnboardingFlow(),
+        auctionBrowse: (context) => const AuctionBrowseScreen(),
+        auctionDetail: (context) => const AuctionDetailScreen(),
+        registration: (context) => const RegistrationScreen(),
+        watchlist: (context) => const WatchlistScreen(),
+        adminDashboardOverview: (context) => const AdminDashboardOverview(),
+        auctionManagementPanel: (context) => const AuctionManagementPanel(),
+        userManagementConsole: (context) => const UserManagementConsole(),
+        // TODO: Add your other routes here
+      };
 }

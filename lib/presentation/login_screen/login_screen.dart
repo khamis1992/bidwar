@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
+import '../../routes/app_routes.dart';
 import '../../services/auth_service.dart';
 import './widgets/app_logo_widget.dart';
 import './widgets/login_form_widget.dart';
@@ -34,8 +35,15 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (response.user != null) {
-        // Navigate to home screen
-        Navigator.pushReplacementNamed(context, AppRoutes.auctionBrowse);
+        // Check if user is admin and navigate accordingly
+        final isAdmin = await AuthService.instance.isAdmin();
+        if (isAdmin) {
+          // Navigate to admin dashboard
+          Navigator.pushReplacementNamed(context, AppRoutes.adminDashboardOverview);
+        } else {
+          // Navigate to regular user home screen
+          Navigator.pushReplacementNamed(context, AppRoutes.auctionBrowse);
+        }
       }
     } catch (e) {
       _showError(e.toString().replaceFirst('Exception: ', ''));
@@ -97,17 +105,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text(
                   'Welcome Back',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 1.h),
                 Text(
                   'Sign in to continue bidding',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+                        color: Colors.grey[600],
+                      ),
                   textAlign: TextAlign.center,
                 ),
 
@@ -137,8 +145,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Text(
                         'OR',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
+                              color: Colors.grey[600],
+                            ),
                       ),
                     ),
                     const Expanded(child: Divider()),

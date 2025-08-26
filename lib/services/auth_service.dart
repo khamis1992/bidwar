@@ -50,6 +50,13 @@ class AuthService {
       );
       return response;
     } catch (error) {
+      // More specific error handling for admin login
+      String errorMessage = error.toString();
+      if (errorMessage.contains('Invalid login credentials') &&
+          email == 'admin@bidwar.com') {
+        throw Exception(
+            'Admin credentials invalid. Please ensure the admin account is properly set up in the database.');
+      }
       throw Exception('Sign in failed: $error');
     }
   }
@@ -69,6 +76,22 @@ class AuthService {
       await _client.auth.resetPasswordForEmail(email);
     } catch (error) {
       throw Exception('Password reset failed: $error');
+    }
+  }
+
+  // Check if current user is admin
+  Future<bool> isAdmin() async {
+    try {
+      if (!isLoggedIn) return false;
+
+      // Check user metadata for admin role
+      final user = currentUser!;
+      final userRole = user.userMetadata?['role'] as String?;
+      final appRole = user.appMetadata['role'] as String?;
+
+      return userRole == 'admin' || appRole == 'admin';
+    } catch (error) {
+      return false;
     }
   }
 
@@ -95,7 +118,7 @@ class AuthService {
   // Listen to auth state changes
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
 
-  // Get user profile data
+  // Get user profile data from database
   Future<Map<String, dynamic>?> getUserProfile() async {
     try {
       if (!isLoggedIn) return null;

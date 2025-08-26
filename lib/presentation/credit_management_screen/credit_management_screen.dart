@@ -3,9 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
-import '../../routes/app_routes.dart';
 import '../../widgets/custom_bottom_bar.dart';
-import '../../widgets/custom_icon_widget.dart';
 import './widgets/credit_balance_header.dart';
 import './widgets/credit_package_card.dart';
 import './widgets/daily_bonus_card.dart';
