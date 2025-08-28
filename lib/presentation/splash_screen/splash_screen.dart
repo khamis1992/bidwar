@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 
-import '../../../core/app_export.dart';
-import '../../theme/app_theme.dart';
+import '../../core/app_export.dart';
+import '../../services/connectivity_service.dart';
+import '../../services/supabase_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -30,6 +31,13 @@ class _SplashScreenState extends State<SplashScreen>
   bool _isInitializing = true;
   String _loadingText = 'Initializing BidWar...';
   bool _showRetryOption = false;
+  int _retryCount = 0;
+  static const int _maxRetries = 3;
+  bool _canProceedWithoutSupabase = false;
+
+  // Connection status tracking
+  ConnectionStatus _connectionStatus = ConnectionStatus.checking;
+  Map<String, dynamic>? _connectionDetails;
 
   // Auction-themed floating icons
   final List<IconData> _auctionIcons = [
@@ -55,29 +63,26 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
     );
 
-    _logoScaleAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _logoAnimationController,
-      curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
-    ));
+    _logoScaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _logoAnimationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
+      ),
+    );
 
-    _logoPulseAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.05,
-    ).animate(CurvedAnimation(
-      parent: _logoAnimationController,
-      curve: Curves.easeInOut,
-    ));
+    _logoPulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
+      CurvedAnimation(
+        parent: _logoAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
 
-    _logoRotationAnimation = Tween<double>(
-      begin: 0.0,
-      end: 0.1,
-    ).animate(CurvedAnimation(
-      parent: _logoAnimationController,
-      curve: const Interval(0.3, 0.8, curve: Curves.easeInOut),
-    ));
+    _logoRotationAnimation = Tween<double>(begin: 0.0, end: 0.1).animate(
+      CurvedAnimation(
+        parent: _logoAnimationController,
+        curve: const Interval(0.3, 0.8, curve: Curves.easeInOut),
+      ),
+    );
 
     // Loading indicator animation
     _loadingAnimationController = AnimationController(
@@ -85,13 +90,12 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
     );
 
-    _loadingOpacityAnimation = Tween<double>(
-      begin: 0.3,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _loadingAnimationController,
-      curve: Curves.easeInOut,
-    ));
+    _loadingOpacityAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _loadingAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
 
     // Particle animation for floating effect
     _particleAnimationController = AnimationController(
@@ -99,13 +103,12 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
     );
 
-    _particleAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _particleAnimationController,
-      curve: Curves.linear,
-    ));
+    _particleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _particleAnimationController,
+        curve: Curves.linear,
+      ),
+    );
 
     // Auction icons floating animation
     _auctionIconsController = AnimationController(
@@ -113,38 +116,48 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
     );
 
-    _auctionIconsAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _auctionIconsController,
-      curve: Curves.easeInOut,
-    ));
+    _auctionIconsAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _auctionIconsController, curve: Curves.easeInOut),
+    );
 
     // Background color transition
     _backgroundColorAnimation = ColorTween(
       begin: AppTheme.lightTheme.colorScheme.primary,
       end: AppTheme.lightTheme.colorScheme.secondary,
-    ).animate(CurvedAnimation(
-      parent: _logoAnimationController,
-      curve: Curves.easeInOut,
-    ));
+    ).animate(
+      CurvedAnimation(
+        parent: _logoAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
 
     // Start animations with staggered timing
     _logoAnimationController.forward();
     _loadingAnimationController.repeat(reverse: true);
 
     Future.delayed(const Duration(milliseconds: 500), () {
-      _particleAnimationController.repeat();
+      if (mounted) _particleAnimationController.repeat();
     });
 
     Future.delayed(const Duration(milliseconds: 800), () {
-      _auctionIconsController.repeat(reverse: true);
+      if (mounted) _auctionIconsController.repeat(reverse: true);
     });
   }
 
   Future<void> _startInitialization() async {
     try {
+      // Initialize connectivity service
+      await ConnectivityService.instance.initialize();
+
+      // Listen to connection status changes
+      ConnectivityService.instance.connectionStatusStream.listen((status) {
+        if (mounted) {
+          setState(() {
+            _connectionStatus = status;
+          });
+        }
+      });
+
       await _performInitializationTasks();
 
       if (mounted) {
@@ -152,41 +165,130 @@ class _SplashScreenState extends State<SplashScreen>
       }
     } catch (e) {
       if (mounted) {
-        _handleInitializationError();
+        _handleInitializationError(e.toString());
       }
     }
   }
 
   Future<void> _performInitializationTasks() async {
-    // Task 1: Check authentication status
-    setState(() {
-      _loadingText = 'Connecting to auction house...';
-    });
-    await Future.delayed(const Duration(milliseconds: 800));
+    try {
+      // Task 1: Check network connectivity
+      setState(() {
+        _loadingText = 'Checking network connection...';
+        _connectionStatus = ConnectionStatus.checking;
+      });
 
-    // Task 2: Load user credit balance
-    setState(() {
-      _loadingText = 'Loading your bidding power...';
-    });
-    await Future.delayed(const Duration(milliseconds: 600));
+      await Future.delayed(const Duration(milliseconds: 500));
 
-    // Task 3: Fetch active auctions
-    setState(() {
-      _loadingText = 'Finding live auctions...';
-    });
-    await Future.delayed(const Duration(milliseconds: 700));
+      final hasNetwork =
+          await ConnectivityService.instance.hasNetworkConnection();
+      if (!hasNetwork) {
+        throw Exception('No network connection available');
+      }
 
-    // Task 4: Prepare cached auction data
-    setState(() {
-      _loadingText = 'Preparing auction catalog...';
-    });
-    await Future.delayed(const Duration(milliseconds: 500));
+      // Task 2: Check Supabase credentials and initialization
+      setState(() {
+        _loadingText = 'Checking server configuration...';
+      });
 
-    // Task 5: Initialize real-time connections
+      await Future.delayed(const Duration(milliseconds: 600));
+
+      if (!SupabaseService.hasValidCredentials) {
+        setState(() {
+          _loadingText = 'Server not configured - Using demo mode...';
+          _canProceedWithoutSupabase = true;
+        });
+        await Future.delayed(const Duration(milliseconds: 1500));
+        _proceedToDemoMode();
+        return;
+      }
+
+      // Task 3: Connect to Supabase
+      setState(() {
+        _loadingText = 'Connecting to auction servers...';
+      });
+
+      final connectionDetails =
+          await ConnectivityService.instance.performFullConnectivityCheck();
+      _connectionDetails = connectionDetails;
+
+      if (!connectionDetails['hasSupabase']) {
+        // Allow graceful fallback instead of hard failure
+        final errorMsg =
+            connectionDetails['errorMessage'] ?? 'Server connection failed';
+        if (connectionDetails['hasNetwork'] &&
+            !errorMsg.contains('credentials')) {
+          setState(() {
+            _loadingText =
+                'Server temporarily unavailable - Using offline mode...';
+            _canProceedWithoutSupabase = true;
+          });
+          await Future.delayed(const Duration(milliseconds: 1500));
+          _proceedToDemoMode();
+          return;
+        }
+        throw Exception(errorMsg);
+      }
+
+      await Future.delayed(const Duration(milliseconds: 800));
+
+      // Task 4: Verify authentication status
+      setState(() {
+        _loadingText = 'Checking authentication status...';
+      });
+
+      await Future.delayed(const Duration(milliseconds: 600));
+
+      // Task 5: Load initial auction data (with timeout)
+      setState(() {
+        _loadingText = 'Loading auction data...';
+      });
+
+      try {
+        await Future.delayed(const Duration(milliseconds: 700));
+
+        // Test a simple query to verify everything works
+        if (SupabaseService.isInitialized) {
+          await SupabaseService.instance.client
+              .from('categories')
+              .select('id')
+              .limit(1)
+              .timeout(const Duration(seconds: 3));
+        }
+      } catch (e) {
+        print('Initial data load failed, continuing anyway: $e');
+      }
+
+      // Task 6: Prepare real-time connections
+      setState(() {
+        _loadingText = 'Establishing real-time connections...';
+      });
+
+      await Future.delayed(const Duration(milliseconds: 600));
+
+      setState(() {
+        _loadingText = 'Ready to bid!';
+        _connectionStatus = ConnectionStatus.connected;
+      });
+
+      await Future.delayed(const Duration(milliseconds: 500));
+    } catch (e) {
+      throw Exception('Initialization failed: ${e.toString()}');
+    }
+  }
+
+  void _proceedToDemoMode() {
     setState(() {
-      _loadingText = 'Establishing real-time bidding...';
+      _connectionStatus =
+          ConnectionStatus.connected; // Show as "connected" for demo
+      _loadingText = 'Ready to explore demo!';
     });
-    await Future.delayed(const Duration(milliseconds: 600));
+
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      if (mounted) {
+        _navigateToNextScreen();
+      }
+    });
   }
 
   void _navigateToNextScreen() {
@@ -195,39 +297,106 @@ class _SplashScreenState extends State<SplashScreen>
 
     String nextRoute;
     if (isAuthenticated) {
-      nextRoute = '/auction-browse-screen';
+      nextRoute = AppRoutes.auctionBrowse;
     } else if (isFirstTime) {
-      nextRoute = '/onboarding-flow';
+      nextRoute = AppRoutes.onboarding;
     } else {
-      nextRoute = '/login-screen';
+      nextRoute = AppRoutes.login;
     }
 
     Navigator.pushReplacementNamed(context, nextRoute);
   }
 
   bool _checkAuthenticationStatus() {
-    return false;
+    // In demo mode or when Supabase isn't available, return false
+    if (_canProceedWithoutSupabase || !SupabaseService.isInitialized) {
+      return false;
+    }
+    return _connectionDetails?['authStatus'] == 'authenticated';
   }
 
   bool _checkFirstTimeUser() {
-    return true;
+    // Check SharedPreferences for first time user
+    return true; // Default to first time for onboarding
   }
 
-  void _handleInitializationError() {
+  void _handleInitializationError(String error) {
     setState(() {
       _isInitializing = false;
       _loadingText = 'Connection timeout - Check network';
       _showRetryOption = true;
+      _connectionStatus = ConnectionStatus.error;
     });
   }
 
-  void _retryInitialization() {
+  Future<void> _retryInitialization() async {
+    if (_retryCount >= _maxRetries) {
+      _showMaxRetriesDialog();
+      return;
+    }
+
     setState(() {
       _isInitializing = true;
       _showRetryOption = false;
-      _loadingText = 'Reconnecting to auction house...';
+      _loadingText = 'Retrying connection...';
+      _retryCount++;
+      _connectionStatus = ConnectionStatus.checking;
     });
-    _startInitialization();
+
+    // Try with exponential backoff
+    final success = await ConnectivityService.instance.retryConnection();
+
+    if (success) {
+      _retryCount = 0; // Reset on success
+      _startInitialization();
+    } else {
+      _handleInitializationError('Connection retry failed');
+    }
+  }
+
+  void _showMaxRetriesDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Connection Failed'),
+            content: const Text(
+              'Unable to connect to BidWar servers after multiple attempts. Would you like to continue in demo mode or try again?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  setState(() {
+                    _canProceedWithoutSupabase = true;
+                    _retryCount = 0;
+                  });
+                  _proceedToDemoMode();
+                },
+                child: const Text('Demo Mode'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  setState(() {
+                    _retryCount = 0;
+                    _retryInitialization();
+                  });
+                },
+                child: const Text('Try Again'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  // Navigate to offline mode or exit
+                  SystemNavigator.pop();
+                },
+                child: const Text('Exit'),
+              ),
+            ],
+          ),
+    );
   }
 
   @override
@@ -236,6 +405,7 @@ class _SplashScreenState extends State<SplashScreen>
     _loadingAnimationController.dispose();
     _particleAnimationController.dispose();
     _auctionIconsController.dispose();
+    ConnectivityService.instance.dispose();
     super.dispose();
   }
 
@@ -288,14 +458,24 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   BoxDecoration _buildAnimatedBackgroundGradient() {
+    Color primaryColor =
+        _canProceedWithoutSupabase
+            ? Colors
+                .orange
+                .shade400 // Demo mode color
+            : _connectionStatus == ConnectionStatus.connected
+            ? AppTheme.lightTheme.colorScheme.primary
+            : _connectionStatus == ConnectionStatus.error
+            ? Colors.red.shade400
+            : AppTheme.lightTheme.colorScheme.primary;
+
     return BoxDecoration(
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          _backgroundColorAnimation.value ??
-              AppTheme.lightTheme.colorScheme.primary,
-          AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.8),
+          primaryColor,
+          primaryColor.withValues(alpha: 0.8),
           AppTheme.lightTheme.colorScheme.secondary.withValues(alpha: 0.6),
           AppTheme.lightTheme.colorScheme.secondary,
         ],
@@ -340,28 +520,31 @@ class _SplashScreenState extends State<SplashScreen>
       animation: _auctionIconsAnimation,
       builder: (context, child) {
         return Stack(
-          children: _auctionIcons.asMap().entries.map((entry) {
-            final int index = entry.key;
-            final IconData icon = entry.value;
+          children:
+              _auctionIcons.asMap().entries.map((entry) {
+                final int index = entry.key;
+                final IconData icon = entry.value;
 
-            final double animationPhase =
-                (_auctionIconsAnimation.value + (index * 0.15)) % 1.0;
-            final double opacity =
-                (0.1 + (animationPhase * 0.2)).clamp(0.0, 0.3);
+                final double animationPhase =
+                    (_auctionIconsAnimation.value + (index * 0.15)) % 1.0;
+                final double opacity = (0.1 + (animationPhase * 0.2)).clamp(
+                  0.0,
+                  0.3,
+                );
 
-            return Positioned(
-              left: (10 + (index * 25)) % 85.w,
-              top: (15 + (index * 12) + (animationPhase * 10)) % 70.h,
-              child: Transform.scale(
-                scale: 0.5 + (animationPhase * 0.3),
-                child: Icon(
-                  icon,
-                  size: 6.w,
-                  color: Colors.white.withValues(alpha: opacity),
-                ),
-              ),
-            );
-          }).toList(),
+                return Positioned(
+                  left: (10 + (index * 25)) % 85.w,
+                  top: (15 + (index * 12) + (animationPhase * 10)) % 70.h,
+                  child: Transform.scale(
+                    scale: 0.5 + (animationPhase * 0.3),
+                    child: Icon(
+                      icon,
+                      size: 6.w,
+                      color: Colors.white.withValues(alpha: opacity),
+                    ),
+                  ),
+                );
+              }).toList(),
         );
       },
     );
@@ -417,12 +600,29 @@ class _SplashScreenState extends State<SplashScreen>
                                 width: 4.w,
                                 height: 4.w,
                                 decoration: BoxDecoration(
-                                  color: Colors.amber,
+                                  color:
+                                      _canProceedWithoutSupabase
+                                          ? Colors.orange
+                                          : _connectionStatus ==
+                                              ConnectionStatus.connected
+                                          ? Colors.green
+                                          : _connectionStatus ==
+                                              ConnectionStatus.error
+                                          ? Colors.red
+                                          : Colors.amber,
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color:
-                                          Colors.amber.withValues(alpha: 0.5),
+                                      color: (_canProceedWithoutSupabase
+                                              ? Colors.orange
+                                              : _connectionStatus ==
+                                                  ConnectionStatus.connected
+                                              ? Colors.green
+                                              : _connectionStatus ==
+                                                  ConnectionStatus.error
+                                              ? Colors.red
+                                              : Colors.amber)
+                                          .withValues(alpha: 0.5),
                                       blurRadius: 8,
                                       spreadRadius: 2,
                                     ),
@@ -443,7 +643,7 @@ class _SplashScreenState extends State<SplashScreen>
                           ),
                         ),
                         Text(
-                          'AUCTIONS',
+                          _canProceedWithoutSupabase ? 'DEMO' : 'AUCTIONS',
                           style: TextStyle(
                             fontSize: 8.sp,
                             fontWeight: FontWeight.w600,
@@ -481,13 +681,24 @@ class _SplashScreenState extends State<SplashScreen>
                       height: 12.w,
                       child: CircularProgressIndicator(
                         strokeWidth: 3,
-                        valueColor:
-                            const AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          _canProceedWithoutSupabase
+                              ? Colors.orange
+                              : _connectionStatus == ConnectionStatus.connected
+                              ? Colors.green
+                              : Colors.white,
+                        ),
                         backgroundColor: Colors.white.withValues(alpha: 0.2),
                       ),
                     ),
                     Icon(
-                      Icons.timer,
+                      _canProceedWithoutSupabase
+                          ? Icons.play_arrow
+                          : _connectionStatus == ConnectionStatus.connected
+                          ? Icons.check_circle
+                          : _connectionStatus == ConnectionStatus.error
+                          ? Icons.error
+                          : Icons.timer,
                       size: 5.w,
                       color: Colors.white.withValues(alpha: 0.8),
                     ),
@@ -510,25 +721,27 @@ class _SplashScreenState extends State<SplashScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
-                3,
-                (index) => AnimatedBuilder(
-                      animation: _loadingAnimationController,
-                      builder: (context, child) {
-                        final double delay = index * 0.2;
-                        final double animationValue =
-                            (_loadingAnimationController.value + delay) % 1.0;
-                        return Container(
-                          margin: EdgeInsets.symmetric(horizontal: 1.w),
-                          width: 2.w,
-                          height: 2.w,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(
-                                alpha: 0.3 + (animationValue * 0.7)),
-                            shape: BoxShape.circle,
-                          ),
-                        );
-                      },
-                    )),
+              3,
+              (index) => AnimatedBuilder(
+                animation: _loadingAnimationController,
+                builder: (context, child) {
+                  final double delay = index * 0.2;
+                  final double animationValue =
+                      (_loadingAnimationController.value + delay) % 1.0;
+                  return Container(
+                    margin: EdgeInsets.symmetric(horizontal: 1.w),
+                    width: 2.w,
+                    height: 2.w,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(
+                        alpha: 0.3 + (animationValue * 0.7),
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
         ],
         if (_showRetryOption) ...[
@@ -559,30 +772,74 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 3.h),
-                ElevatedButton.icon(
-                  onPressed: _retryInitialization,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: AppTheme.lightTheme.colorScheme.primary,
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    elevation: 5,
-                  ),
-                  icon: Icon(
-                    Icons.refresh,
-                    size: 5.w,
-                  ),
-                  label: Text(
-                    'Retry Connection',
+                if (_retryCount > 0) ...[
+                  SizedBox(height: 1.h),
+                  Text(
+                    'Attempt ${_retryCount}/$_maxRetries',
                     style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 12.sp,
+                      color: Colors.white.withValues(alpha: 0.7),
                     ),
                   ),
+                ],
+                SizedBox(height: 3.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _retryInitialization,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor:
+                            AppTheme.lightTheme.colorScheme.primary,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6.w,
+                          vertical: 1.5.h,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        elevation: 5,
+                      ),
+                      icon: Icon(Icons.refresh, size: 4.w),
+                      label: Text(
+                        'Retry',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _canProceedWithoutSupabase = true;
+                          _showRetryOption = false;
+                        });
+                        _proceedToDemoMode();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6.w,
+                          vertical: 1.5.h,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        elevation: 5,
+                      ),
+                      icon: Icon(Icons.play_arrow, size: 4.w),
+                      label: Text(
+                        'Demo',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -601,13 +858,30 @@ class _SplashScreenState extends State<SplashScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.flash_on,
+                _canProceedWithoutSupabase
+                    ? Icons.play_circle
+                    : _connectionStatus == ConnectionStatus.connected
+                    ? Icons.flash_on
+                    : _connectionStatus == ConnectionStatus.error
+                    ? Icons.signal_wifi_off
+                    : Icons.signal_wifi_4_bar,
                 size: 5.w,
-                color: Colors.amber,
+                color:
+                    _canProceedWithoutSupabase
+                        ? Colors.orange
+                        : _connectionStatus == ConnectionStatus.connected
+                        ? Colors.amber
+                        : Colors.white.withValues(alpha: 0.8),
               ),
               SizedBox(width: 2.w),
               Text(
-                'Real-time Penny Auctions',
+                _canProceedWithoutSupabase
+                    ? 'Demo Mode - Explore Features'
+                    : _connectionStatus == ConnectionStatus.connected
+                    ? 'Connected - Real-time Bidding Ready'
+                    : _connectionStatus == ConnectionStatus.error
+                    ? 'Connection Error - Retrying...'
+                    : 'Establishing Connection...',
                 style: TextStyle(
                   fontSize: 13.sp,
                   color: Colors.white.withValues(alpha: 0.9),
@@ -627,7 +901,9 @@ class _SplashScreenState extends State<SplashScreen>
               ),
               SizedBox(width: 2.w),
               Text(
-                'Secure & Fair Bidding Platform',
+                _canProceedWithoutSupabase
+                    ? 'Explore Without Registration'
+                    : 'Secure & Fair Bidding Platform',
                 style: TextStyle(
                   fontSize: 11.sp,
                   color: Colors.white.withValues(alpha: 0.8),

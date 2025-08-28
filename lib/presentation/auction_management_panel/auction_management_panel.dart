@@ -222,7 +222,7 @@ class _AuctionManagementPanelState extends State<AuctionManagementPanel>
         children: [
           // Sidebar
           AdminSidebarWidget(
-            currentRoute: AppRoutes.auctionManagementPanel,
+            currentRoute: AppRoutes.auctionManagement,
             onSignOut: _signOut,
           ),
           // Main Content

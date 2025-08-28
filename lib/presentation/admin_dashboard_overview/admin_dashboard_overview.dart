@@ -112,7 +112,7 @@ class _AdminDashboardOverviewState extends State<AdminDashboardOverview> {
         children: [
           // Sidebar
           AdminSidebarWidget(
-            currentRoute: AppRoutes.adminDashboardOverview,
+            currentRoute: AppRoutes.adminDashboard,
             onSignOut: _signOut,
           ),
           // Main Content

@@ -42,8 +42,9 @@ class OnboardingNavigationWidget extends StatelessWidget {
               child: Text(
                 'Skip',
                 style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
-                  color: AppTheme.lightTheme.colorScheme.onSurface
-                      .withValues(alpha: 0.6),
+                  color: AppTheme.lightTheme.colorScheme.onSurface.withValues(
+                    alpha: 0.6,
+                  ),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -74,7 +75,7 @@ class OnboardingNavigationWidget extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  isLastPage ? 'Start Bidding' : 'Next',
+                  isLastPage ? 'Get Started' : 'Next',
                   style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
                     color: AppTheme.lightTheme.colorScheme.onSecondary,
                     fontWeight: FontWeight.w600,
@@ -82,7 +83,7 @@ class OnboardingNavigationWidget extends StatelessWidget {
                 ),
                 SizedBox(width: 2.w),
                 CustomIconWidget(
-                  iconName: isLastPage ? 'gavel' : 'arrow_forward',
+                  iconName: isLastPage ? 'login' : 'arrow_forward',
                   color: AppTheme.lightTheme.colorScheme.onSecondary,
                   size: 20,
                 ),

@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
-import '../../theme/app_theme.dart';
 import './widgets/onboarding_navigation_widget.dart';
 import './widgets/onboarding_page_widget.dart';
 import './widgets/page_indicator_widget.dart';
@@ -58,13 +57,9 @@ class _OnboardingFlowState extends State<OnboardingFlow>
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
 
     _animationController.forward();
   }
@@ -95,7 +90,7 @@ class _OnboardingFlowState extends State<OnboardingFlow>
   void _skipOnboarding() {
     Navigator.pushNamedAndRemoveUntil(
       context,
-      '/auction-browse-screen',
+      AppRoutes.login,
       (route) => false,
     );
   }
@@ -103,7 +98,7 @@ class _OnboardingFlowState extends State<OnboardingFlow>
   void _getStarted() {
     Navigator.pushNamedAndRemoveUntil(
       context,
-      '/auction-browse-screen',
+      AppRoutes.login,
       (route) => false,
     );
   }
@@ -114,7 +109,7 @@ class _OnboardingFlowState extends State<OnboardingFlow>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Great! You\'re ready to start bidding!',
+          'Great! You\'re ready to get started!',
           style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
             color: AppTheme.lightTheme.colorScheme.onInverseSurface,
           ),
@@ -122,9 +117,7 @@ class _OnboardingFlowState extends State<OnboardingFlow>
         backgroundColor: AppTheme.lightTheme.colorScheme.inverseSurface,
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -143,29 +136,33 @@ class _OnboardingFlowState extends State<OnboardingFlow>
                 padding: EdgeInsets.only(top: 2.h, right: 4.w),
                 child: Align(
                   alignment: Alignment.topRight,
-                  child: _currentPage < _onboardingData.length - 1
-                      ? TextButton(
-                          onPressed: () {
-                            HapticFeedback.lightImpact();
-                            _skipOnboarding();
-                          },
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 4.w,
-                              vertical: 1.h,
+                  child:
+                      _currentPage < _onboardingData.length - 1
+                          ? TextButton(
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              _skipOnboarding();
+                            },
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 4.w,
+                                vertical: 1.h,
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            'Skip',
-                            style: AppTheme.lightTheme.textTheme.labelLarge
-                                ?.copyWith(
-                              color: AppTheme.lightTheme.colorScheme.onSurface
-                                  .withValues(alpha: 0.6),
-                              fontWeight: FontWeight.w500,
+                            child: Text(
+                              'Skip',
+                              style: AppTheme.lightTheme.textTheme.labelLarge
+                                  ?.copyWith(
+                                    color: AppTheme
+                                        .lightTheme
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.6),
+                                    fontWeight: FontWeight.w500,
+                                  ),
                             ),
-                          ),
-                        )
-                      : const SizedBox.shrink(),
+                          )
+                          : const SizedBox.shrink(),
                 ),
               ),
             ),

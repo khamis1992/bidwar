@@ -40,7 +40,7 @@ class QuickActionsWidget extends StatelessWidget {
             Icons.gavel,
             Colors.blue,
             () =>
-                Navigator.pushNamed(context, AppRoutes.auctionManagementPanel),
+                Navigator.pushNamed(context, AppRoutes.auctionManagement),
           ),
           SizedBox(height: 1.h),
           _buildActionButton(

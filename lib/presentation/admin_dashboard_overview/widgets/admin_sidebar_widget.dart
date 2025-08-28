@@ -89,7 +89,7 @@ class AdminSidebarWidget extends StatelessWidget {
               context,
               'Dashboard',
               Icons.dashboard,
-              AppRoutes.adminDashboardOverview,
+              AppRoutes.adminDashboard,
             ),
           ]),
           SizedBox(height: 2.h),
@@ -98,21 +98,21 @@ class AdminSidebarWidget extends StatelessWidget {
               context,
               'Auctions',
               Icons.gavel,
-              AppRoutes.auctionManagementPanel,
+              AppRoutes.auctionManagement,
             ),
             _buildMenuItem(
               context,
               'Users',
               Icons.people,
               AppRoutes
-                  .adminDashboardOverview, // TODO: Replace with user management route
+                  .adminDashboard, // TODO: Replace with user management route
             ),
             _buildMenuItem(
               context,
               'Financial',
               Icons.account_balance_wallet,
               AppRoutes
-                  .adminDashboardOverview, // TODO: Replace with financial route
+                  .adminDashboard, // TODO: Replace with financial route
             ),
           ]),
           SizedBox(height: 2.h),
@@ -122,14 +122,14 @@ class AdminSidebarWidget extends StatelessWidget {
               'Reports',
               Icons.analytics,
               AppRoutes
-                  .adminDashboardOverview, // TODO: Replace with reports route
+                  .adminDashboard, // TODO: Replace with reports route
             ),
             _buildMenuItem(
               context,
               'Statistics',
               Icons.show_chart,
               AppRoutes
-                  .adminDashboardOverview, // TODO: Replace with statistics route
+                  .adminDashboard, // TODO: Replace with statistics route
             ),
           ]),
           SizedBox(height: 2.h),
@@ -139,14 +139,14 @@ class AdminSidebarWidget extends StatelessWidget {
               'Settings',
               Icons.settings,
               AppRoutes
-                  .adminDashboardOverview, // TODO: Replace with settings route
+                  .adminDashboard, // TODO: Replace with settings route
             ),
             _buildMenuItem(
               context,
               'Notifications',
               Icons.notifications,
               AppRoutes
-                  .adminDashboardOverview, // TODO: Replace with notifications route
+                  .adminDashboard, // TODO: Replace with notifications route
             ),
           ]),
         ],

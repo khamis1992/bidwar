@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/user_profile.dart';
 import './supabase_service.dart';
 
 class AuthService {
@@ -27,10 +28,7 @@ class AuthService {
       final response = await _client.auth.signUp(
         email: email,
         password: password,
-        data: {
-          'full_name': fullName,
-          'role': role,
-        },
+        data: {'full_name': fullName, 'role': role},
       );
       return response;
     } catch (error) {
@@ -55,7 +53,8 @@ class AuthService {
       if (errorMessage.contains('Invalid login credentials') &&
           email == 'admin@bidwar.com') {
         throw Exception(
-            'Admin credentials invalid. Please ensure the admin account is properly set up in the database.');
+          'Admin credentials invalid. Please ensure the admin account is properly set up in the database.',
+        );
       }
       throw Exception('Sign in failed: $error');
     }
@@ -107,9 +106,7 @@ class AuthService {
       if (phone != null) updates['phone'] = phone;
       if (address != null) updates['address'] = address;
 
-      return await _client.auth.updateUser(
-        UserAttributes(data: updates),
-      );
+      return await _client.auth.updateUser(UserAttributes(data: updates));
     } catch (error) {
       throw Exception('Profile update failed: $error');
     }
@@ -123,11 +120,12 @@ class AuthService {
     try {
       if (!isLoggedIn) return null;
 
-      final response = await _client
-          .from('user_profiles')
-          .select()
-          .eq('id', currentUser!.id)
-          .single();
+      final response =
+          await _client
+              .from('user_profiles')
+              .select()
+              .eq('id', currentUser!.id)
+              .single();
 
       return response;
     } catch (error) {
@@ -146,7 +144,7 @@ class AuthService {
       if (!isLoggedIn) throw Exception('User not logged in');
 
       final updates = <String, dynamic>{
-        'updated_at': DateTime.now().toIso8601String()
+        'updated_at': DateTime.now().toIso8601String(),
       };
       if (fullName != null) updates['full_name'] = fullName;
       if (phone != null) updates['phone'] = phone;
@@ -168,15 +166,34 @@ class AuthService {
     try {
       if (!isLoggedIn) return 0;
 
-      final response = await _client
-          .from('user_profiles')
-          .select('credit_balance')
-          .eq('id', currentUser!.id)
-          .single();
+      final response =
+          await _client
+              .from('user_profiles')
+              .select('credit_balance')
+              .eq('id', currentUser!.id)
+              .single();
 
       return response['credit_balance'] ?? 0;
     } catch (error) {
       throw Exception('Failed to get credit balance: $error');
+    }
+  }
+
+  // Get current user profile with UserProfile model
+  Future<UserProfile?> getCurrentUserProfile() async {
+    try {
+      if (!isLoggedIn) return null;
+
+      final response =
+          await _client
+              .from('user_profiles')
+              .select()
+              .eq('id', currentUser!.id)
+              .single();
+
+      return UserProfile.fromMap(response);
+    } catch (error) {
+      throw Exception('Failed to get current user profile: $error');
     }
   }
 }

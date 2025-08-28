@@ -39,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
         final isAdmin = await AuthService.instance.isAdmin();
         if (isAdmin) {
           // Navigate to admin dashboard
-          Navigator.pushReplacementNamed(context, AppRoutes.adminDashboardOverview);
+          Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);
         } else {
           // Navigate to regular user home screen
           Navigator.pushReplacementNamed(context, AppRoutes.auctionBrowse);

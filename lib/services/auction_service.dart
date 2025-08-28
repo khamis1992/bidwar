@@ -312,4 +312,99 @@ class AuctionService {
         )
         .subscribe();
   }
+
+  // Get live auctions with streams
+  Future<List<Map<String, dynamic>>> getLiveAuctions({
+    String? categoryId,
+    String? search,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    try {
+      var query = _client.from('auction_items').select('''
+            *,
+            seller:user_profiles!seller_id(full_name, profile_picture_url),
+            category:categories(name, image_url),
+            live_stream:live_streams!auction_item_id(
+              id, title, status, viewer_count, scheduled_start, actual_start
+            ),
+            bid_count:bids(count)
+          ''').not('live_streams.id', 'iss', null);
+
+      // Apply filters
+      if (categoryId != null) {
+        query = query.eq('category_id', categoryId);
+      }
+      if (search != null && search.isNotEmpty) {
+        query = query.or('title.ilike.%$search%,description.ilike.%$search%');
+      }
+
+      // Apply ordering and pagination
+      final response = await query
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (error) {
+      throw Exception('Failed to get live auctions: $error');
+    }
+  }
+
+  // Get regular auctions (non-live)
+  Future<List<Map<String, dynamic>>> getRegularAuctions({
+    String? categoryId,
+    String? status,
+    String? search,
+    bool? featured,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    try {
+      // First, get all auction IDs that have live streams
+      final liveStreamAuctionIds = await _client
+          .from('live_streams')
+          .select('auction_item_id')
+          .not('auction_item_id', 'is', null);
+
+      // Extract the auction item IDs from the response
+      final List<String> excludeIds = liveStreamAuctionIds
+          .map((item) => item['auction_item_id'] as String)
+          .toList();
+
+      var query = _client.from('auction_items').select('''
+            *,
+            seller:user_profiles!seller_id(full_name, profile_picture_url),
+            category:categories(name, image_url),
+            bid_count:bids(count)
+          ''');
+
+      // Exclude auction items that have live streams
+      if (excludeIds.isNotEmpty) {
+        query = query.not('id', 'in', excludeIds);
+      }
+
+      // Apply filters
+      if (categoryId != null) {
+        query = query.eq('category_id', categoryId);
+      }
+      if (status != null) {
+        query = query.eq('status', status);
+      }
+      if (featured != null) {
+        query = query.eq('featured', featured);
+      }
+      if (search != null && search.isNotEmpty) {
+        query = query.or('title.ilike.%$search%,description.ilike.%$search%');
+      }
+
+      // Apply ordering and pagination
+      final response = await query
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (error) {
+      throw Exception('Failed to get regular auctions: $error');
+    }
+  }
 }

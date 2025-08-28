@@ -16,11 +16,12 @@ class CreditService {
       final user = AuthService.instance.currentUser;
       if (user == null) return 0;
 
-      final response = await _client
-          .from('user_profiles')
-          .select('credit_balance')
-          .eq('id', user.id)
-          .single();
+      final response =
+          await _client
+              .from('user_profiles')
+              .select('credit_balance')
+              .eq('id', user.id)
+              .single();
 
       return response['credit_balance'] ?? 0;
     } catch (error) {
@@ -49,10 +50,13 @@ class CreditService {
 
       // Update user's credit balance
       final currentBalance = await getCreditBalance();
-      await _client.from('user_profiles').update({
-        'credit_balance': currentBalance + amount,
-        'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', user.id);
+      await _client
+          .from('user_profiles')
+          .update({
+            'credit_balance': currentBalance + amount,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', user.id);
     } catch (error) {
       throw Exception('Failed to purchase credits: $error');
     }
@@ -84,6 +88,14 @@ class CreditService {
     }
   }
 
+  // Alias method for compatibility
+  Future<List<Map<String, dynamic>>> getUserTransactionHistory({
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    return getCreditTransactions(limit: limit, offset: offset);
+  }
+
   // Deduct credits (used internally by bid processing)
   Future<void> deductCredits({
     required int amount,
@@ -113,10 +125,13 @@ class CreditService {
       });
 
       // Update user's credit balance
-      await _client.from('user_profiles').update({
-        'credit_balance': currentBalance - amount,
-        'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', user.id);
+      await _client
+          .from('user_profiles')
+          .update({
+            'credit_balance': currentBalance - amount,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', user.id);
     } catch (error) {
       throw Exception('Failed to deduct credits: $error');
     }
@@ -146,10 +161,13 @@ class CreditService {
 
       // Update user's credit balance
       final currentBalance = await getCreditBalance();
-      await _client.from('user_profiles').update({
-        'credit_balance': currentBalance + amount,
-        'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', user.id);
+      await _client
+          .from('user_profiles')
+          .update({
+            'credit_balance': currentBalance + amount,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', user.id);
     } catch (error) {
       throw Exception('Failed to refund credits: $error');
     }
