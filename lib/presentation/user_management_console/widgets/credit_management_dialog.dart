@@ -314,7 +314,7 @@ class _CreditManagementDialogState extends State<CreditManagementDialog> {
 
   Widget _buildTransactionItem(Map<String, dynamic> transaction) {
     final amount = transaction['amount'] ?? 0;
-    final type = transaction['transaction_type'] ?? '';
+
     final description = transaction['description'] ?? '';
     final date = _formatDate(transaction['created_at']);
     final isPositive = amount > 0;

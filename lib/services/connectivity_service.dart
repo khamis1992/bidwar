@@ -49,7 +49,8 @@ class ConnectivityService {
           await _connectivity.checkConnectivity();
 
       // If no network connectivity, return false immediately
-      if (connectivityResult.contains(ConnectivityResult.none)) {
+      if (connectivityResult.contains(ConnectivityResult.none) ||
+          connectivityResult.isEmpty) {
         return false;
       }
 
@@ -61,7 +62,8 @@ class ConnectivityService {
         return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
       } catch (e) {
         // If ping fails, still consider connected if we have network interface
-        return !connectivityResult.contains(ConnectivityResult.none);
+        return !connectivityResult.contains(ConnectivityResult.none) &&
+            connectivityResult.isNotEmpty;
       }
     } catch (e) {
       return false;
@@ -193,7 +195,7 @@ class ConnectivityService {
 
   // Handle connectivity changes
   void _handleConnectivityChange(List<ConnectivityResult> results) {
-    if (results.contains(ConnectivityResult.none)) {
+    if (results.contains(ConnectivityResult.none) || results.isEmpty) {
       _updateStatus(ConnectionStatus.disconnected);
     } else {
       // When connectivity returns, recheck connection after a brief delay

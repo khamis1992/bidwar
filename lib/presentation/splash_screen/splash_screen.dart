@@ -358,44 +358,43 @@ class _SplashScreenState extends State<SplashScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Connection Failed'),
-            content: const Text(
-              'Unable to connect to BidWar servers after multiple attempts. Would you like to continue in demo mode or try again?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  setState(() {
-                    _canProceedWithoutSupabase = true;
-                    _retryCount = 0;
-                  });
-                  _proceedToDemoMode();
-                },
-                child: const Text('Demo Mode'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  setState(() {
-                    _retryCount = 0;
-                    _retryInitialization();
-                  });
-                },
-                child: const Text('Try Again'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  // Navigate to offline mode or exit
-                  SystemNavigator.pop();
-                },
-                child: const Text('Exit'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('Connection Failed'),
+        content: const Text(
+          'Unable to connect to BidWar servers after multiple attempts. Would you like to continue in demo mode or try again?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              setState(() {
+                _canProceedWithoutSupabase = true;
+                _retryCount = 0;
+              });
+              _proceedToDemoMode();
+            },
+            child: const Text('Demo Mode'),
           ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              setState(() {
+                _retryCount = 0;
+                _retryInitialization();
+              });
+            },
+            child: const Text('Try Again'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Navigate to offline mode or exit
+              SystemNavigator.pop();
+            },
+            child: const Text('Exit'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -458,16 +457,13 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   BoxDecoration _buildAnimatedBackgroundGradient() {
-    Color primaryColor =
-        _canProceedWithoutSupabase
-            ? Colors
-                .orange
-                .shade400 // Demo mode color
-            : _connectionStatus == ConnectionStatus.connected
+    Color primaryColor = _canProceedWithoutSupabase
+        ? Colors.orange.shade400 // Demo mode color
+        : _connectionStatus == ConnectionStatus.connected
             ? AppTheme.lightTheme.colorScheme.primary
             : _connectionStatus == ConnectionStatus.error
-            ? Colors.red.shade400
-            : AppTheme.lightTheme.colorScheme.primary;
+                ? Colors.red.shade400
+                : AppTheme.lightTheme.colorScheme.primary;
 
     return BoxDecoration(
       gradient: LinearGradient(
@@ -475,8 +471,8 @@ class _SplashScreenState extends State<SplashScreen>
         end: Alignment.bottomRight,
         colors: [
           primaryColor,
-          primaryColor.withValues(alpha: 0.8),
-          AppTheme.lightTheme.colorScheme.secondary.withValues(alpha: 0.6),
+          primaryColor.withOpacity(0.8),
+          AppTheme.lightTheme.colorScheme.secondary.withOpacity(0.6),
           AppTheme.lightTheme.colorScheme.secondary,
         ],
         stops: const [0.0, 0.3, 0.7, 1.0],
@@ -503,7 +499,7 @@ class _SplashScreenState extends State<SplashScreen>
                   width: 2.w + (index % 3),
                   height: 2.w + (index % 3),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.3 - (index * 0.02)),
+                    color: Colors.white.withOpacity(0.3 - (index * 0.02)),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -520,31 +516,30 @@ class _SplashScreenState extends State<SplashScreen>
       animation: _auctionIconsAnimation,
       builder: (context, child) {
         return Stack(
-          children:
-              _auctionIcons.asMap().entries.map((entry) {
-                final int index = entry.key;
-                final IconData icon = entry.value;
+          children: _auctionIcons.asMap().entries.map((entry) {
+            final int index = entry.key;
+            final IconData icon = entry.value;
 
-                final double animationPhase =
-                    (_auctionIconsAnimation.value + (index * 0.15)) % 1.0;
-                final double opacity = (0.1 + (animationPhase * 0.2)).clamp(
-                  0.0,
-                  0.3,
-                );
+            final double animationPhase =
+                (_auctionIconsAnimation.value + (index * 0.15)) % 1.0;
+            final double opacity = (0.1 + (animationPhase * 0.2)).clamp(
+              0.0,
+              0.3,
+            );
 
-                return Positioned(
-                  left: (10 + (index * 25)) % 85.w,
-                  top: (15 + (index * 12) + (animationPhase * 10)) % 70.h,
-                  child: Transform.scale(
-                    scale: 0.5 + (animationPhase * 0.3),
-                    child: Icon(
-                      icon,
-                      size: 6.w,
-                      color: Colors.white.withValues(alpha: opacity),
-                    ),
-                  ),
-                );
-              }).toList(),
+            return Positioned(
+              left: (10 + (index * 25)) % 85.w,
+              top: (15 + (index * 12) + (animationPhase * 10)) % 70.h,
+              child: Transform.scale(
+                scale: 0.5 + (animationPhase * 0.3),
+                child: Icon(
+                  icon,
+                  size: 6.w,
+                  color: Colors.white.withOpacity(opacity),
+                ),
+              ),
+            );
+          }).toList(),
         );
       },
     );
@@ -571,12 +566,12 @@ class _SplashScreenState extends State<SplashScreen>
                       borderRadius: BorderRadius.circular(25),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
+                          color: Colors.black.withOpacity(0.3),
                           blurRadius: 25,
                           offset: const Offset(0, 15),
                         ),
                         BoxShadow(
-                          color: Colors.white.withValues(alpha: 0.1),
+                          color: Colors.white.withOpacity(0.1),
                           blurRadius: 10,
                           offset: const Offset(0, -5),
                         ),
@@ -600,29 +595,28 @@ class _SplashScreenState extends State<SplashScreen>
                                 width: 4.w,
                                 height: 4.w,
                                 decoration: BoxDecoration(
-                                  color:
-                                      _canProceedWithoutSupabase
-                                          ? Colors.orange
-                                          : _connectionStatus ==
+                                  color: _canProceedWithoutSupabase
+                                      ? Colors.orange
+                                      : _connectionStatus ==
                                               ConnectionStatus.connected
                                           ? Colors.green
                                           : _connectionStatus ==
-                                              ConnectionStatus.error
-                                          ? Colors.red
-                                          : Colors.amber,
+                                                  ConnectionStatus.error
+                                              ? Colors.red
+                                              : Colors.amber,
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
                                       color: (_canProceedWithoutSupabase
                                               ? Colors.orange
                                               : _connectionStatus ==
-                                                  ConnectionStatus.connected
-                                              ? Colors.green
-                                              : _connectionStatus ==
-                                                  ConnectionStatus.error
-                                              ? Colors.red
-                                              : Colors.amber)
-                                          .withValues(alpha: 0.5),
+                                                      ConnectionStatus.connected
+                                                  ? Colors.green
+                                                  : _connectionStatus ==
+                                                          ConnectionStatus.error
+                                                      ? Colors.red
+                                                      : Colors.amber)
+                                          .withOpacity(0.5),
                                       blurRadius: 8,
                                       spreadRadius: 2,
                                     ),
@@ -648,7 +642,7 @@ class _SplashScreenState extends State<SplashScreen>
                             fontSize: 8.sp,
                             fontWeight: FontWeight.w600,
                             color: AppTheme.lightTheme.colorScheme.primary
-                                .withValues(alpha: 0.7),
+                                .withOpacity(0.7),
                             letterSpacing: 2.0,
                           ),
                         ),
@@ -685,22 +679,22 @@ class _SplashScreenState extends State<SplashScreen>
                           _canProceedWithoutSupabase
                               ? Colors.orange
                               : _connectionStatus == ConnectionStatus.connected
-                              ? Colors.green
-                              : Colors.white,
+                                  ? Colors.green
+                                  : Colors.white,
                         ),
-                        backgroundColor: Colors.white.withValues(alpha: 0.2),
+                        backgroundColor: Colors.white.withOpacity(0.2),
                       ),
                     ),
                     Icon(
                       _canProceedWithoutSupabase
                           ? Icons.play_arrow
                           : _connectionStatus == ConnectionStatus.connected
-                          ? Icons.check_circle
-                          : _connectionStatus == ConnectionStatus.error
-                          ? Icons.error
-                          : Icons.timer,
+                              ? Icons.check_circle
+                              : _connectionStatus == ConnectionStatus.error
+                                  ? Icons.error
+                                  : Icons.timer,
                       size: 5.w,
-                      color: Colors.white.withValues(alpha: 0.8),
+                      color: Colors.white.withOpacity(0.8),
                     ),
                   ],
                 ),
@@ -712,7 +706,7 @@ class _SplashScreenState extends State<SplashScreen>
             _loadingText,
             style: TextStyle(
               fontSize: 15.sp,
-              color: Colors.white.withValues(alpha: 0.95),
+              color: Colors.white.withOpacity(0.95),
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
@@ -733,8 +727,8 @@ class _SplashScreenState extends State<SplashScreen>
                     width: 2.w,
                     height: 2.w,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(
-                        alpha: 0.3 + (animationValue * 0.7),
+                      color: Colors.white.withOpacity(
+                        0.3 + (animationValue * 0.7),
                       ),
                       shape: BoxShape.circle,
                     ),
@@ -748,10 +742,10 @@ class _SplashScreenState extends State<SplashScreen>
           Container(
             padding: EdgeInsets.all(4.w),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
+              color: Colors.white.withOpacity(0.1),
               borderRadius: BorderRadius.circular(15),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.3),
+                color: Colors.white.withOpacity(0.3),
                 width: 1,
               ),
             ),
@@ -767,7 +761,7 @@ class _SplashScreenState extends State<SplashScreen>
                   _loadingText,
                   style: TextStyle(
                     fontSize: 14.sp,
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: Colors.white.withOpacity(0.9),
                     fontWeight: FontWeight.w500,
                   ),
                   textAlign: TextAlign.center,
@@ -778,7 +772,7 @@ class _SplashScreenState extends State<SplashScreen>
                     'Attempt ${_retryCount}/$_maxRetries',
                     style: TextStyle(
                       fontSize: 12.sp,
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: Colors.white.withOpacity(0.7),
                     ),
                   ),
                 ],
@@ -861,30 +855,29 @@ class _SplashScreenState extends State<SplashScreen>
                 _canProceedWithoutSupabase
                     ? Icons.play_circle
                     : _connectionStatus == ConnectionStatus.connected
-                    ? Icons.flash_on
-                    : _connectionStatus == ConnectionStatus.error
-                    ? Icons.signal_wifi_off
-                    : Icons.signal_wifi_4_bar,
+                        ? Icons.flash_on
+                        : _connectionStatus == ConnectionStatus.error
+                            ? Icons.signal_wifi_off
+                            : Icons.signal_wifi_4_bar,
                 size: 5.w,
-                color:
-                    _canProceedWithoutSupabase
-                        ? Colors.orange
-                        : _connectionStatus == ConnectionStatus.connected
+                color: _canProceedWithoutSupabase
+                    ? Colors.orange
+                    : _connectionStatus == ConnectionStatus.connected
                         ? Colors.amber
-                        : Colors.white.withValues(alpha: 0.8),
+                        : Colors.white.withOpacity(0.8),
               ),
               SizedBox(width: 2.w),
               Text(
                 _canProceedWithoutSupabase
                     ? 'Demo Mode - Explore Features'
                     : _connectionStatus == ConnectionStatus.connected
-                    ? 'Connected - Real-time Bidding Ready'
-                    : _connectionStatus == ConnectionStatus.error
-                    ? 'Connection Error - Retrying...'
-                    : 'Establishing Connection...',
+                        ? 'Connected - Real-time Bidding Ready'
+                        : _connectionStatus == ConnectionStatus.error
+                            ? 'Connection Error - Retrying...'
+                            : 'Establishing Connection...',
                 style: TextStyle(
                   fontSize: 13.sp,
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: Colors.white.withOpacity(0.9),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -897,7 +890,7 @@ class _SplashScreenState extends State<SplashScreen>
               Icon(
                 Icons.verified_user,
                 size: 4.w,
-                color: Colors.white.withValues(alpha: 0.8),
+                color: Colors.white.withOpacity(0.8),
               ),
               SizedBox(width: 2.w),
               Text(
@@ -906,7 +899,7 @@ class _SplashScreenState extends State<SplashScreen>
                     : 'Secure & Fair Bidding Platform',
                 style: TextStyle(
                   fontSize: 11.sp,
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: Colors.white.withOpacity(0.8),
                   fontWeight: FontWeight.w400,
                 ),
               ),

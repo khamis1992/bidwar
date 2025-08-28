@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import 'dart:math' as math;
 
-import '/core/app_export.dart';
-
 class RevenueBreakdownWidget extends StatelessWidget {
   final Map<String, dynamic> revenueData;
 
@@ -14,10 +12,6 @@ class RevenueBreakdownWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final totalSales = revenueData['total_sales'] ?? 0.0;
-    final avgBidValue = revenueData['average_bid_value'] ?? 0.0;
-    final commissionDetails = revenueData['commission_details'] ?? {};
-
     return Container(
       padding: EdgeInsets.all(16.h),
       decoration: BoxDecoration(

@@ -25,7 +25,6 @@ class ProductDetailModalWidget extends StatefulWidget {
 
 class _ProductDetailModalWidgetState extends State<ProductDetailModalWidget> {
   bool _isSelecting = false;
-  int _currentImageIndex = 0;
 
   bool get _canSelect {
     return (widget.product.isAccessible ?? false) &&
@@ -129,8 +128,7 @@ class _ProductDetailModalWidgetState extends State<ProductDetailModalWidget> {
                                 gradient: LinearGradient(
                                   colors: [
                                     Colors.green.shade50,
-                                    Colors.green.shade25 ??
-                                        Colors.green.shade50,
+                                    Colors.green.shade100,
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(12.0),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
-
 class StreamQualityMetricsWidget extends StatelessWidget {
   final Map<String, dynamic> qualityData;
 
@@ -311,10 +310,6 @@ class QualityTrendsPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (trends.isEmpty) return;
-
-    final paint = Paint()
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
 
     final qualityPaint = Paint()
       ..color = Colors.blue

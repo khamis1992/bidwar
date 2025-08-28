@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import 'dart:math' as math;
 
-import '/core/app_export.dart';
-
 class EngagementChartWidget extends StatelessWidget {
   final Map<String, dynamic> engagementData;
 
@@ -166,10 +164,6 @@ class EngagementChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (timelineData.isEmpty) return;
-
-    final paint = Paint()
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
 
     final chatPaint = Paint()
       ..color = Colors.blue

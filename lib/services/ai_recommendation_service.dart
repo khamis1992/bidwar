@@ -1,4 +1,3 @@
-
 import '../models/auction_item.dart';
 import '../models/recommendation.dart';
 import './supabase_service.dart';
@@ -200,12 +199,6 @@ class AIRecommendationService {
     final categoryIds = watchedItems
         .where((item) => item['category_id'] != null)
         .map((item) => item['category_id'])
-        .toSet()
-        .toList();
-
-    final brands = watchedItems
-        .where((item) => item['brand'] != null)
-        .map((item) => item['brand'])
         .toSet()
         .toList();
 

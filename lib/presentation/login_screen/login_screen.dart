@@ -46,7 +46,20 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } catch (e) {
-      _showError(e.toString().replaceFirst('Exception: ', ''));
+      String errorMessage = e.toString().replaceFirst('Exception: ', '');
+
+      // Handle specific Supabase initialization error
+      if (errorMessage.contains('Supabase not initialized')) {
+        errorMessage =
+            'خدمة قاعدة البيانات غير متاحة حالياً. يرجى المحاولة لاحقاً.';
+      } else if (errorMessage.contains('Invalid login credentials')) {
+        errorMessage =
+            'بيانات تسجيل الدخول غير صحيحة. يرجى التحقق من البريد الإلكتروني وكلمة المرور.';
+      } else if (errorMessage.contains('network')) {
+        errorMessage = 'مشكلة في الاتصال بالإنترنت. يرجى التحقق من اتصالك.';
+      }
+
+      _showError(errorMessage);
     } finally {
       setState(() => _isLoading = false);
     }
@@ -168,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     padding: EdgeInsets.symmetric(vertical: 2.h),
                     side: BorderSide(color: Colors.grey[300]!),
                   ),
-                  child: const Text('Continue as Guest'),
+                  child: const Text('المتابعة كضيف'),
                 ),
 
                 SizedBox(height: 3.h),

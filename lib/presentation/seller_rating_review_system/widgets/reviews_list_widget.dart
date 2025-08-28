@@ -3,8 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:sizer/sizer.dart';
 import 'dart:math' as math;
 
-import '/core/app_export.dart';
-
 class ReviewsListWidget extends StatelessWidget {
   final List<dynamic> reviews;
   final Function(String action, String reviewId) onReviewAction;
