@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
+
 class ViewerDemographicsWidget extends StatelessWidget {
   final Map<String, dynamic> demographicsData;
 

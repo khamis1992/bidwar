@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
+
 class ReviewFiltersWidget extends StatelessWidget {
   final String selectedRating;
   final String selectedSort;
@@ -226,10 +227,14 @@ class ReviewFiltersWidget extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 12.h, vertical: 6.h),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue : Colors.transparent,
+          color: isSelected
+              ? Colors.blue
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(16.h),
           border: Border.all(
-            color: isSelected ? Colors.blue : Colors.grey[300]!,
+            color: isSelected
+                ? Colors.blue
+                : Colors.grey[300]!,
           ),
         ),
         child: Text(

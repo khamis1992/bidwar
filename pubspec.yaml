@@ -4,7 +4,7 @@ publish_to: none
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.3.0 <4.0.0'
+  sdk: ^3.6.0
 
 dependencies:
   flutter:       # CRITICAL: Required for every Flutter project - DO NOT REMOVE
@@ -34,6 +34,7 @@ dependencies:
   equatable: ^2.0.7    # Added for value equality in recommendation models
   shimmer: ^3.0.0            # Added for loading skeleton animations and live auction badge shimmer effects
   animations: ^2.0.11        # Added for enhanced UI transitions and animations
+  flutter_dotenv: ^6.0.0     # Added for comprehensive environment variable management with multiple fallback strategies
 
   universal_html: ^2.2.4
 dev_dependencies:
@@ -46,7 +47,6 @@ flutter:
   assets:
     - assets/
     - assets/images/
-    - env.json
   # CRITICAL ASSET MANAGEMENT RULES:
   # - DO NOT ADD NEW ASSET DIRECTORIES (assets/svg/, assets/icons/, etc.)
   # - ONLY USE EXISTING AND ITEMS AVAILABLE IN THE DIRECTORIES LISTED ABOVE (assets/, assets/images/)

@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/app_export.dart';
 import '../../services/supabase_service.dart';
-import '../../widgets/custom_image_widget.dart';
 
 class ProductSelectionScreen extends StatefulWidget {
   final String userTier;

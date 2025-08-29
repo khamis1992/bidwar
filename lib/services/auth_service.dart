@@ -8,14 +8,14 @@ class AuthService {
   static AuthService get instance => _instance ??= AuthService._();
   AuthService._();
 
-  SupabaseClient? get _client => SupabaseService.instance.safeClient;
+  SupabaseClient get _client => SupabaseService.instance.client;
 
   // Get current user
-  User? get currentUser => _client?.auth.currentUser;
+  User? get currentUser => _client.auth.currentUser;
   bool get isLoggedIn => currentUser != null;
 
   // Get current session
-  Session? get currentSession => _client?.auth.currentSession;
+  Session? get currentSession => _client.auth.currentSession;
 
   // Sign up with email and password
   Future<AuthResponse> signUp({
@@ -24,13 +24,8 @@ class AuthService {
     required String fullName,
     String role = 'bidder',
   }) async {
-    if (_client == null) {
-      throw Exception(
-          'Supabase not initialized. Please check your connection.');
-    }
-
     try {
-      final response = await _client!.auth.signUp(
+      final response = await _client.auth.signUp(
         email: email,
         password: password,
         data: {'full_name': fullName, 'role': role},
@@ -46,13 +41,8 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    if (_client == null) {
-      throw Exception(
-          'Supabase not initialized. Please check your connection.');
-    }
-
     try {
-      final response = await _client!.auth.signInWithPassword(
+      final response = await _client.auth.signInWithPassword(
         email: email,
         password: password,
       );
@@ -130,11 +120,12 @@ class AuthService {
     try {
       if (!isLoggedIn) return null;
 
-      final response = await _client
-          .from('user_profiles')
-          .select()
-          .eq('id', currentUser!.id)
-          .single();
+      final response =
+          await _client
+              .from('user_profiles')
+              .select()
+              .eq('id', currentUser!.id)
+              .single();
 
       return response;
     } catch (error) {
@@ -175,11 +166,12 @@ class AuthService {
     try {
       if (!isLoggedIn) return 0;
 
-      final response = await _client
-          .from('user_profiles')
-          .select('credit_balance')
-          .eq('id', currentUser!.id)
-          .single();
+      final response =
+          await _client
+              .from('user_profiles')
+              .select('credit_balance')
+              .eq('id', currentUser!.id)
+              .single();
 
       return response['credit_balance'] ?? 0;
     } catch (error) {
@@ -192,11 +184,12 @@ class AuthService {
     try {
       if (!isLoggedIn) return null;
 
-      final response = await _client
-          .from('user_profiles')
-          .select()
-          .eq('id', currentUser!.id)
-          .single();
+      final response =
+          await _client
+              .from('user_profiles')
+              .select()
+              .eq('id', currentUser!.id)
+              .single();
 
       return UserProfile.fromMap(response);
     } catch (error) {

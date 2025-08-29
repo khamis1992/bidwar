@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../presentation/admin_dashboard_overview/admin_dashboard_overview.dart';
 import '../presentation/advanced_live_stream_admin_panel/advanced_live_stream_admin_panel.dart';
-
+import '../presentation/ai_powered_stream_recommendations_engine/ai_powered_stream_recommendations_engine.dart';
 import '../presentation/auction_browse_screen/auction_browse_screen.dart';
 import '../presentation/auction_detail_screen/auction_detail_screen.dart';
 import '../presentation/auction_management_panel/auction_management_panel.dart';
@@ -44,10 +44,8 @@ class AppRoutes {
   static const String auctionManagement = '/auction-management';
   static const String advancedLiveStreamAdmin = '/advanced-live-stream-admin';
   static const String productSelectionScreen = '/product-selection-screen';
-  static const String creatorCommissionDashboard =
-      '/creator-commission-dashboard';
-  static const String enhancedLiveStreamCreationScreen =
-      '/enhanced-live-stream-creation-screen';
+  static const String creatorCommissionDashboard = '/creator-commission-dashboard';
+  static const String enhancedLiveStreamCreationScreen = '/enhanced-live-stream-creation-screen';
 
   static Map<String, WidgetBuilder> routes = {
     splash: (context) => const SplashScreen(),
@@ -55,13 +53,10 @@ class AppRoutes {
     login: (context) => const LoginScreen(),
     registration: (context) => const RegistrationScreen(),
     auctionBrowse: (context) => const AuctionBrowseScreen(),
-    tikTokStyleAuctionBrowse: (context) =>
-        const TikTokStyleAuctionBrowseScreen(),
+    tikTokStyleAuctionBrowse: (context) => const TikTokStyleAuctionBrowseScreen(),
     auctionDetail: (context) => const AuctionDetailScreen(),
     liveAuctionStream: (context) {
-      final args =
-          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
-              {};
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ?? {};
       return LiveAuctionStreamScreen(
         streamId: args['streamId'] ?? 'default',
       );
@@ -72,22 +67,20 @@ class AppRoutes {
     creditManagement: (context) => CreditManagementScreen(),
     liveStreamAnalytics: (context) => LiveStreamAnalyticsDashboard(),
     sellerRatingReview: (context) => SellerRatingReviewSystem(),
+    aiStreamRecommendations: (context) => AiPoweredStreamRecommendationsEngine(),
     adminDashboard: (context) => AdminDashboardOverview(),
     userManagement: (context) => UserManagementConsole(),
     auctionManagement: (context) => AuctionManagementPanel(),
     advancedLiveStreamAdmin: (context) => AdvancedLiveStreamAdminPanel(),
     productSelectionScreen: (context) {
-      final args =
-          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
-              {};
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ?? {};
       return ProductSelectionScreen(
         userTier: args['userTier'] ?? 'bronze',
         creditBalance: args['creditBalance'] ?? 0,
       );
     },
     creatorCommissionDashboard: (context) => CreatorCommissionDashboard(),
-    enhancedLiveStreamCreationScreen: (context) =>
-        EnhancedLiveStreamCreationScreen(),
+    enhancedLiveStreamCreationScreen: (context) => EnhancedLiveStreamCreationScreen(),
   };
 
   Route<dynamic> generateRoute(RouteSettings settings) {

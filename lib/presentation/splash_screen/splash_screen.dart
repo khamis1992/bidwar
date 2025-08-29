@@ -4,6 +4,7 @@ import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
 import '../../services/connectivity_service.dart';
+import '../../services/environment_service.dart';
 import '../../services/supabase_service.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -35,9 +36,10 @@ class _SplashScreenState extends State<SplashScreen>
   static const int _maxRetries = 3;
   bool _canProceedWithoutSupabase = false;
 
-  // Connection status tracking
+  // Enhanced status tracking
   ConnectionStatus _connectionStatus = ConnectionStatus.checking;
   Map<String, dynamic>? _connectionDetails;
+  Map<String, dynamic>? _environmentStatus;
 
   // Auction-themed floating icons
   final List<IconData> _auctionIcons = [
@@ -146,7 +148,21 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _startInitialization() async {
     try {
+      // Initialize environment service first
+      setState(() {
+        _loadingText = 'Loading environment configuration...';
+      });
+
+      final envInitialized = await EnvironmentService.initialize();
+      _environmentStatus = EnvironmentService.getStatus();
+
+      await Future.delayed(const Duration(milliseconds: 800));
+
       // Initialize connectivity service
+      setState(() {
+        _loadingText = 'Initializing connectivity service...';
+      });
+
       await ConnectivityService.instance.initialize();
 
       // Listen to connection status changes
@@ -165,20 +181,20 @@ class _SplashScreenState extends State<SplashScreen>
       }
     } catch (e) {
       if (mounted) {
-        _handleInitializationError(e.toString());
+        _handleInitializationError('Initialization failed: ${e.toString()}');
       }
     }
   }
 
   Future<void> _performInitializationTasks() async {
     try {
-      // Task 1: Check network connectivity
+      // Task 1: Check network connectivity with enhanced validation
       setState(() {
         _loadingText = 'Checking network connection...';
         _connectionStatus = ConnectionStatus.checking;
       });
 
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 600));
 
       final hasNetwork =
           await ConnectivityService.instance.hasNetworkConnection();
@@ -186,16 +202,16 @@ class _SplashScreenState extends State<SplashScreen>
         throw Exception('No network connection available');
       }
 
-      // Task 2: Check Supabase credentials and initialization
+      // Task 2: Validate environment configuration
       setState(() {
-        _loadingText = 'Checking server configuration...';
+        _loadingText = 'Validating server configuration...';
       });
 
-      await Future.delayed(const Duration(milliseconds: 600));
+      await Future.delayed(const Duration(milliseconds: 700));
 
-      if (!SupabaseService.hasValidCredentials) {
+      if (!EnvironmentService.hasValidSupabaseCredentials()) {
         setState(() {
-          _loadingText = 'Server not configured - Using demo mode...';
+          _loadingText = 'Server not configured - Preparing demo mode...';
           _canProceedWithoutSupabase = true;
         });
         await Future.delayed(const Duration(milliseconds: 1500));
@@ -203,7 +219,7 @@ class _SplashScreenState extends State<SplashScreen>
         return;
       }
 
-      // Task 3: Connect to Supabase
+      // Task 3: Initialize and connect to Supabase
       setState(() {
         _loadingText = 'Connecting to auction servers...';
       });
@@ -213,33 +229,51 @@ class _SplashScreenState extends State<SplashScreen>
       _connectionDetails = connectionDetails;
 
       if (!connectionDetails['hasSupabase']) {
-        // Allow graceful fallback instead of hard failure
         final errorMsg =
             connectionDetails['errorMessage'] ?? 'Server connection failed';
-        if (connectionDetails['hasNetwork'] &&
-            !errorMsg.contains('credentials')) {
+        final connectivity = connectionDetails['connectivity'] ?? 'unknown';
+
+        print('🔧 Connection failed - Type: $connectivity, Error: $errorMsg');
+
+        // Provide more specific error handling
+        if (connectivity == 'timeout') {
           setState(() {
-            _loadingText =
-                'Server temporarily unavailable - Using offline mode...';
-            _canProceedWithoutSupabase = true;
+            _loadingText = 'Server response timeout - Retrying...';
           });
-          await Future.delayed(const Duration(milliseconds: 1500));
-          _proceedToDemoMode();
+          await Future.delayed(const Duration(milliseconds: 1000));
+
+          // Try one more time with longer timeout
+          final retryResult =
+              await ConnectivityService.instance.retryConnection(maxRetries: 1);
+          if (!retryResult) {
+            _proceedToDemoModeWithReason('Server timeout - Using offline mode');
+            return;
+          } else {
+            // Retry successful, continue with normal flow
+            _connectionDetails!['hasSupabase'] = true;
+          }
+        } else if (connectivity == 'no_credentials') {
+          _proceedToDemoModeWithReason('Credentials not configured');
           return;
+        } else if (connectionDetails['hasNetwork'] &&
+            !errorMsg.contains('credentials')) {
+          _proceedToDemoModeWithReason('Server temporarily unavailable');
+          return;
+        } else {
+          throw Exception(errorMsg);
         }
-        throw Exception(errorMsg);
       }
 
-      await Future.delayed(const Duration(milliseconds: 800));
+      await Future.delayed(const Duration(milliseconds: 600));
 
       // Task 4: Verify authentication status
       setState(() {
         _loadingText = 'Checking authentication status...';
       });
 
-      await Future.delayed(const Duration(milliseconds: 600));
+      await Future.delayed(const Duration(milliseconds: 500));
 
-      // Task 5: Load initial auction data (with timeout)
+      // Task 5: Load initial auction data with proper error handling
       setState(() {
         _loadingText = 'Loading auction data...';
       });
@@ -253,10 +287,11 @@ class _SplashScreenState extends State<SplashScreen>
               .from('categories')
               .select('id')
               .limit(1)
-              .timeout(const Duration(seconds: 3));
+              .timeout(const Duration(seconds: 4));
         }
       } catch (e) {
-        print('Initial data load failed, continuing anyway: $e');
+        print('⚠️ Initial data load failed, continuing anyway: $e');
+        // Don't fail the entire initialization for this
       }
 
       // Task 6: Prepare real-time connections
@@ -264,24 +299,36 @@ class _SplashScreenState extends State<SplashScreen>
         _loadingText = 'Establishing real-time connections...';
       });
 
-      await Future.delayed(const Duration(milliseconds: 600));
+      await Future.delayed(const Duration(milliseconds: 500));
 
       setState(() {
-        _loadingText = 'Ready to bid!';
+        _loadingText = 'Ready to bid! 🎯';
         _connectionStatus = ConnectionStatus.connected;
       });
 
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 800));
     } catch (e) {
-      throw Exception('Initialization failed: ${e.toString()}');
+      throw Exception('Initialization sequence failed: ${e.toString()}');
     }
+  }
+
+  void _proceedToDemoModeWithReason(String reason) {
+    setState(() {
+      _loadingText = '$reason - Using demo mode...';
+      _canProceedWithoutSupabase = true;
+    });
+
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) {
+        _proceedToDemoMode();
+      }
+    });
   }
 
   void _proceedToDemoMode() {
     setState(() {
-      _connectionStatus =
-          ConnectionStatus.connected; // Show as "connected" for demo
-      _loadingText = 'Ready to explore demo!';
+      _connectionStatus = ConnectionStatus.connected;
+      _loadingText = 'Ready to explore demo! 🚀';
     });
 
     Future.delayed(const Duration(milliseconds: 1000), () {
@@ -323,10 +370,31 @@ class _SplashScreenState extends State<SplashScreen>
   void _handleInitializationError(String error) {
     setState(() {
       _isInitializing = false;
-      _loadingText = 'Connection timeout - Check network';
       _showRetryOption = true;
       _connectionStatus = ConnectionStatus.error;
     });
+
+    // Provide more specific error messages
+    if (error.contains('network')) {
+      setState(() {
+        _loadingText = 'Network connection failed - Check your internet';
+      });
+    } else if (error.contains('timeout')) {
+      setState(() {
+        _loadingText = 'Server connection timeout - Try again';
+      });
+    } else if (error.contains('credentials')) {
+      setState(() {
+        _loadingText = 'Configuration error - Using demo mode';
+        _canProceedWithoutSupabase = true;
+      });
+      Future.delayed(const Duration(milliseconds: 2000), _proceedToDemoMode);
+      return;
+    } else {
+      setState(() {
+        _loadingText = 'Connection failed - Check network';
+      });
+    }
   }
 
   Future<void> _retryInitialization() async {
@@ -343,8 +411,10 @@ class _SplashScreenState extends State<SplashScreen>
       _connectionStatus = ConnectionStatus.checking;
     });
 
-    // Try with exponential backoff
-    final success = await ConnectivityService.instance.retryConnection();
+    // Try with exponential backoff and enhanced retry logic
+    final success = await ConnectivityService.instance.retryConnection(
+      maxRetries: 2,
+    );
 
     if (success) {
       _retryCount = 0; // Reset on success
@@ -360,8 +430,34 @@ class _SplashScreenState extends State<SplashScreen>
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: const Text('Connection Failed'),
-        content: const Text(
-          'Unable to connect to BidWar servers after multiple attempts. Would you like to continue in demo mode or try again?',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Unable to connect to BidWar servers after multiple attempts.',
+            ),
+            const SizedBox(height: 12),
+            if (_environmentStatus != null) ...[
+              const Text(
+                'Debug Information:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '• Environment: ${_environmentStatus!['total_variables']} variables loaded',
+                style: const TextStyle(fontSize: 12),
+              ),
+              Text(
+                '• Supabase URL: ${_environmentStatus!['has_supabase_url'] ? "✅" : "❌"}',
+                style: const TextStyle(fontSize: 12),
+              ),
+              Text(
+                '• Supabase Key: ${_environmentStatus!['has_supabase_key'] ? "✅" : "❌"}',
+                style: const TextStyle(fontSize: 12),
+              ),
+            ],
+          ],
         ),
         actions: [
           TextButton(
@@ -380,15 +476,14 @@ class _SplashScreenState extends State<SplashScreen>
               Navigator.of(context).pop();
               setState(() {
                 _retryCount = 0;
-                _retryInitialization();
               });
+              _retryInitialization();
             },
             child: const Text('Try Again'),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              // Navigate to offline mode or exit
               SystemNavigator.pop();
             },
             child: const Text('Exit'),
@@ -458,12 +553,14 @@ class _SplashScreenState extends State<SplashScreen>
 
   BoxDecoration _buildAnimatedBackgroundGradient() {
     Color primaryColor = _canProceedWithoutSupabase
-        ? Colors.orange.shade400 // Demo mode color
+        ? Colors.orange.shade400
         : _connectionStatus == ConnectionStatus.connected
             ? AppTheme.lightTheme.colorScheme.primary
             : _connectionStatus == ConnectionStatus.error
                 ? Colors.red.shade400
-                : AppTheme.lightTheme.colorScheme.primary;
+                : _connectionStatus == ConnectionStatus.timeout
+                    ? Colors.amber.shade400
+                    : AppTheme.lightTheme.colorScheme.primary;
 
     return BoxDecoration(
       gradient: LinearGradient(
@@ -471,8 +568,8 @@ class _SplashScreenState extends State<SplashScreen>
         end: Alignment.bottomRight,
         colors: [
           primaryColor,
-          primaryColor.withOpacity(0.8),
-          AppTheme.lightTheme.colorScheme.secondary.withOpacity(0.6),
+          primaryColor.withValues(alpha: 0.8),
+          AppTheme.lightTheme.colorScheme.secondary.withValues(alpha: 0.6),
           AppTheme.lightTheme.colorScheme.secondary,
         ],
         stops: const [0.0, 0.3, 0.7, 1.0],
@@ -499,7 +596,7 @@ class _SplashScreenState extends State<SplashScreen>
                   width: 2.w + (index % 3),
                   height: 2.w + (index % 3),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3 - (index * 0.02)),
+                    color: Colors.white.withValues(alpha: 0.3 - (index * 0.02)),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -535,7 +632,7 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Icon(
                   icon,
                   size: 6.w,
-                  color: Colors.white.withOpacity(opacity),
+                  color: Colors.white.withValues(alpha: opacity),
                 ),
               ),
             );
@@ -566,12 +663,12 @@ class _SplashScreenState extends State<SplashScreen>
                       borderRadius: BorderRadius.circular(25),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.3),
                           blurRadius: 25,
                           offset: const Offset(0, 15),
                         ),
                         BoxShadow(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                           blurRadius: 10,
                           offset: const Offset(0, -5),
                         ),
@@ -603,7 +700,10 @@ class _SplashScreenState extends State<SplashScreen>
                                           : _connectionStatus ==
                                                   ConnectionStatus.error
                                               ? Colors.red
-                                              : Colors.amber,
+                                              : _connectionStatus ==
+                                                      ConnectionStatus.timeout
+                                                  ? Colors.amber
+                                                  : Colors.grey,
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
@@ -615,8 +715,12 @@ class _SplashScreenState extends State<SplashScreen>
                                                   : _connectionStatus ==
                                                           ConnectionStatus.error
                                                       ? Colors.red
-                                                      : Colors.amber)
-                                          .withOpacity(0.5),
+                                                      : _connectionStatus ==
+                                                              ConnectionStatus
+                                                                  .timeout
+                                                          ? Colors.amber
+                                                          : Colors.grey)
+                                          .withValues(alpha: 0.5),
                                       blurRadius: 8,
                                       spreadRadius: 2,
                                     ),
@@ -642,7 +746,7 @@ class _SplashScreenState extends State<SplashScreen>
                             fontSize: 8.sp,
                             fontWeight: FontWeight.w600,
                             color: AppTheme.lightTheme.colorScheme.primary
-                                .withOpacity(0.7),
+                                .withValues(alpha: 0.7),
                             letterSpacing: 2.0,
                           ),
                         ),
@@ -680,9 +784,12 @@ class _SplashScreenState extends State<SplashScreen>
                               ? Colors.orange
                               : _connectionStatus == ConnectionStatus.connected
                                   ? Colors.green
-                                  : Colors.white,
+                                  : _connectionStatus ==
+                                          ConnectionStatus.timeout
+                                      ? Colors.amber
+                                      : Colors.white,
                         ),
-                        backgroundColor: Colors.white.withOpacity(0.2),
+                        backgroundColor: Colors.white.withValues(alpha: 0.2),
                       ),
                     ),
                     Icon(
@@ -692,9 +799,12 @@ class _SplashScreenState extends State<SplashScreen>
                               ? Icons.check_circle
                               : _connectionStatus == ConnectionStatus.error
                                   ? Icons.error
-                                  : Icons.timer,
+                                  : _connectionStatus ==
+                                          ConnectionStatus.timeout
+                                      ? Icons.access_time
+                                      : Icons.sync,
                       size: 5.w,
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha: 0.8),
                     ),
                   ],
                 ),
@@ -706,7 +816,7 @@ class _SplashScreenState extends State<SplashScreen>
             _loadingText,
             style: TextStyle(
               fontSize: 15.sp,
-              color: Colors.white.withOpacity(0.95),
+              color: Colors.white.withValues(alpha: 0.95),
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
@@ -727,8 +837,8 @@ class _SplashScreenState extends State<SplashScreen>
                     width: 2.w,
                     height: 2.w,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(
-                        0.3 + (animationValue * 0.7),
+                      color: Colors.white.withValues(
+                        alpha: 0.3 + (animationValue * 0.7),
                       ),
                       shape: BoxShape.circle,
                     ),
@@ -742,17 +852,19 @@ class _SplashScreenState extends State<SplashScreen>
           Container(
             padding: EdgeInsets.all(4.w),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(15),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
             child: Column(
               children: [
                 Icon(
-                  Icons.signal_wifi_connected_no_internet_4,
+                  _connectionStatus == ConnectionStatus.timeout
+                      ? Icons.access_time
+                      : Icons.signal_wifi_connected_no_internet_4,
                   size: 10.w,
                   color: Colors.white,
                 ),
@@ -761,7 +873,7 @@ class _SplashScreenState extends State<SplashScreen>
                   _loadingText,
                   style: TextStyle(
                     fontSize: 14.sp,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontWeight: FontWeight.w500,
                   ),
                   textAlign: TextAlign.center,
@@ -772,7 +884,7 @@ class _SplashScreenState extends State<SplashScreen>
                     'Attempt ${_retryCount}/$_maxRetries',
                     style: TextStyle(
                       fontSize: 12.sp,
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -858,13 +970,17 @@ class _SplashScreenState extends State<SplashScreen>
                         ? Icons.flash_on
                         : _connectionStatus == ConnectionStatus.error
                             ? Icons.signal_wifi_off
-                            : Icons.signal_wifi_4_bar,
+                            : _connectionStatus == ConnectionStatus.timeout
+                                ? Icons.access_time
+                                : Icons.signal_wifi_4_bar,
                 size: 5.w,
                 color: _canProceedWithoutSupabase
                     ? Colors.orange
                     : _connectionStatus == ConnectionStatus.connected
                         ? Colors.amber
-                        : Colors.white.withOpacity(0.8),
+                        : _connectionStatus == ConnectionStatus.timeout
+                            ? Colors.amber
+                            : Colors.white.withValues(alpha: 0.8),
               ),
               SizedBox(width: 2.w),
               Text(
@@ -874,10 +990,12 @@ class _SplashScreenState extends State<SplashScreen>
                         ? 'Connected - Real-time Bidding Ready'
                         : _connectionStatus == ConnectionStatus.error
                             ? 'Connection Error - Retrying...'
-                            : 'Establishing Connection...',
+                            : _connectionStatus == ConnectionStatus.timeout
+                                ? 'Server Timeout - Check Connection'
+                                : 'Establishing Connection...',
                 style: TextStyle(
                   fontSize: 13.sp,
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -890,7 +1008,7 @@ class _SplashScreenState extends State<SplashScreen>
               Icon(
                 Icons.verified_user,
                 size: 4.w,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
               ),
               SizedBox(width: 2.w),
               Text(
@@ -899,7 +1017,7 @@ class _SplashScreenState extends State<SplashScreen>
                     : 'Secure & Fair Bidding Platform',
                 style: TextStyle(
                   fontSize: 11.sp,
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                   fontWeight: FontWeight.w400,
                 ),
               ),
