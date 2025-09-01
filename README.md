@@ -124,15 +124,27 @@ Container(
 ```
 ## 📦 Deployment
 
-Build the application for production:
+### Local Build
+Build the application for production locally:
 
 ```bash
-# For Android
-flutter build apk --release
+# For Android (Debug)
+flutter build apk --debug --dart-define-from-file=env.json
+
+# For Android (Release)
+flutter build apk --release --dart-define-from-file=env.json
 
 # For iOS
 flutter build ios --release
 ```
+
+### Automated APK Building
+We provide GitHub Actions workflows for automated APK building:
+
+- **Basic Build**: Automatically triggers on pushes and PRs
+- **Advanced Build**: Manual workflow with full control over versioning and signing
+
+📱 **[Complete APK Build Guide](docs/APK_BUILD_GUIDE.md)** - Detailed instructions for building and distributing APK files using GitHub Actions.
 
 ## 🙏 Acknowledgments
 - Built with [Rocket.new](https://rocket.new)

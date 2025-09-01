@@ -1,0 +1,120 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type (debug/release)'
+        required: false
+        default: 'debug'
+        type: choice
+        options:
+        - debug
+        - release
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+        
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.3'
+        channel: 'stable'
+        cache: true
+        
+    - name: Verify Flutter installation
+      run: |
+        flutter doctor -v
+        flutter --version
+        
+    - name: Create environment file
+      run: |
+        cat > env.json << EOF
+        {
+          "SUPABASE_URL": "${{ secrets.SUPABASE_URL || 'https://lelkttetaguswijpdnsb.supabase.co' }}",
+          "SUPABASE_ANON_KEY": "${{ secrets.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxlbGt0dGV0YWd1c3dpanBkbnNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMzA2OTgsImV4cCI6MjA3MTgwNjY5OH0.wS2ko7O7glbg0Ekw-QHY9WB7HkFOGwohlO_Zwr8ByLw' }}",
+          "OPENAI_API_KEY": "${{ secrets.OPENAI_API_KEY || 'your-openai-api-key-here' }}",
+          "GEMINI_API_KEY": "${{ secrets.GEMINI_API_KEY || 'your-gemini-api-key-here' }}",
+          "ANTHROPIC_API_KEY": "${{ secrets.ANTHROPIC_API_KEY || 'your-anthropic-api-key-here' }}",
+          "PERPLEXITY_API_KEY": "${{ secrets.PERPLEXITY_API_KEY || 'your-perplexity-api-key-here' }}"
+        }
+        EOF
+        
+    - name: Get dependencies
+      run: flutter pub get
+      
+    - name: Run tests
+      run: flutter test --no-pub
+      continue-on-error: true
+      
+    - name: Analyze code
+      run: flutter analyze
+      continue-on-error: true
+      
+    - name: Build APK (Debug)
+      if: ${{ github.event.inputs.build_type == 'debug' || github.event.inputs.build_type == '' }}
+      run: |
+        flutter build apk --debug --dart-define-from-file=env.json
+        
+    - name: Build APK (Release)
+      if: ${{ github.event.inputs.build_type == 'release' }}
+      run: |
+        flutter build apk --release --dart-define-from-file=env.json
+        
+    - name: Get APK path and info
+      run: |
+        echo "APK_PATH=$(find build/app/outputs/flutter-apk -name '*.apk' | head -1)" >> $GITHUB_ENV
+        ls -la build/app/outputs/flutter-apk/
+        
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: bidwar-apk-${{ github.run_number }}
+        path: build/app/outputs/flutter-apk/*.apk
+        retention-days: 30
+        
+    - name: Create Release with APK
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v1.0.${{ github.run_number }}
+        name: Release v1.0.${{ github.run_number }}
+        draft: false
+        prerelease: false
+        files: |
+          build/app/outputs/flutter-apk/*.apk
+        body: |
+          🚀 **BidWar APK Build - v1.0.${{ github.run_number }}**
+          
+          📱 **What's included:**
+          - Android APK file ready for installation
+          - Built from commit: ${{ github.sha }}
+          - Build number: ${{ github.run_number }}
+          
+          📋 **Installation:**
+          1. Download the APK file
+          2. Enable "Install from unknown sources" on your Android device
+          3. Install the APK
+          
+          🔧 **Build Information:**
+          - Flutter Version: 3.24.3
+          - Build Type: ${{ github.event.inputs.build_type || 'debug' }}
+          - Built on: ${{ runner.os }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
