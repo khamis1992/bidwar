@@ -45,3 +45,16 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# CI/CD artifacts
+artifacts/
+release_notes.md
+flutter_build.log
+coverage/
+.coverage
+build_info.txt
+
+# Environment files (secrets should be in GitHub secrets)
+.env
+.env.local
+.env.production
