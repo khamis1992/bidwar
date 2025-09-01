@@ -33,7 +33,15 @@ android {
     }
 
     buildTypes {
+        debug {
+            debuggable true
+            minifyEnabled false
+            shrinkResources false
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+        }
         release {
+            debuggable false
             minifyEnabled false
             shrinkResources false
             // TODO: Add your own signing config for the release build.
