@@ -38,6 +38,13 @@ jobs:
         channel: 'stable'
         cache: true
         
+    - name: 🔧 Flutter Configuration
+      run: |
+        echo "🔧 Configuring Flutter..."
+        flutter config --no-analytics
+        flutter precache
+        echo "✅ Flutter configured"
+        
     - name: 🔧 Setup Android SDK
       uses: android-actions/setup-android@v3
       with:
@@ -78,7 +85,18 @@ jobs:
         echo "✅ Code fixes applied"
         
     - name: 📦 Get Dependencies
-      run: flutter pub get
+      run: |
+        echo "🧹 Cleaning previous dependency resolution..."
+        rm -f pubspec.lock
+        
+        echo "📦 Getting Flutter dependencies..."
+        flutter pub get
+        
+        echo "🔍 Checking for dependency conflicts..."
+        flutter pub deps || true
+        
+        echo "📋 Checking outdated packages..."
+        flutter pub outdated || true
       
     - name: 🔍 Analyze Code
       run: flutter analyze --no-fatal-infos || true
@@ -91,23 +109,57 @@ jobs:
         BUILD_TYPE="${{ github.event.inputs.build_type || 'release' }}"
         echo "🏗️ Building $BUILD_TYPE APK..."
         
-        flutter build apk \
+        # Ensure we can write to the build directory
+        mkdir -p build/app/outputs/flutter-apk
+        
+        # Build APK with comprehensive error handling
+        if flutter build apk \
           --$BUILD_TYPE \
           --dart-define-from-file=env.json \
           --android-skip-build-dependency-validation \
           --no-tree-shake-icons \
-          --target-platform android-arm,android-arm64,android-x64
+          --target-platform android-arm,android-arm64,android-x64; then
+          echo "✅ APK build completed successfully"
+        else
+          echo "❌ APK build failed. Checking for partial build..."
+          
+          # Show flutter doctor for debugging
+          echo "📋 Flutter Doctor Output:"
+          flutter doctor -v || true
+          
+          # List any APK files that might have been created
+          echo "🔍 Searching for any APK files..."
+          find . -name "*.apk" -type f 2>/dev/null || echo "No APK files found"
+          
+          # Show build directory structure
+          echo "📁 Build directory structure:"
+          ls -la build/ || echo "Build directory not found"
+          ls -la build/app/ || echo "Build app directory not found"
+          ls -la build/app/outputs/ || echo "Build outputs directory not found"
+          
+          exit 1
+        fi
           
     - name: 📋 APK Info
       run: |
         BUILD_TYPE="${{ github.event.inputs.build_type || 'release' }}"
         APK_PATH="build/app/outputs/flutter-apk/app-$BUILD_TYPE.apk"
         
+        echo "🔍 Looking for APK file at: $APK_PATH"
+        
         if [ -f "$APK_PATH" ]; then
           APK_SIZE=$(du -h "$APK_PATH" | cut -f1)
           echo "✅ APK created successfully!"
           echo "📱 APK Path: $APK_PATH"
           echo "📏 APK Size: $APK_SIZE"
+          
+          # Verify APK is not corrupted
+          if [ -s "$APK_PATH" ]; then
+            echo "✅ APK file is not empty"
+          else
+            echo "⚠️ APK file exists but is empty"
+            exit 1
+          fi
           
           # Create build info
           cat > build_info.txt << EOF
@@ -121,23 +173,47 @@ jobs:
         Branch: ${{ github.ref_name }}
         Workflow: ${{ github.workflow }}
         Run Number: ${{ github.run_number }}
+        
+        Build Environment:
+        - Flutter Version: $(flutter --version | head -n 1)
+        - Java Version: $JAVA_HOME
+        - Android SDK: $ANDROID_HOME
         EOF
           
           echo "📋 Build info created"
         else
-          echo "❌ APK file not found!"
-          find build -name "*.apk" -type f || echo "No APK files found anywhere"
+          echo "❌ APK file not found at: $APK_PATH"
+          echo "🔍 Searching for any APK files..."
+          find build -name "*.apk" -type f 2>/dev/null | head -10 || echo "No APK files found anywhere"
+          
+          echo "📁 Build outputs directory contents:"
+          ls -la build/app/outputs/ || echo "Build outputs directory not found"
+          ls -la build/app/outputs/flutter-apk/ || echo "Flutter APK directory not found"
+          
           exit 1
         fi
         
     - name: 📤 Upload APK Artifact
       uses: actions/upload-artifact@v4
+      if: success()
       with:
         name: bidwar-apk-${{ github.event.inputs.build_type || 'release' }}-${{ github.run_number }}
         path: |
           build/app/outputs/flutter-apk/*.apk
           build_info.txt
         retention-days: 30
+        if-no-files-found: error
+        
+    - name: 📤 Upload Build Logs (if build fails)
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: build-logs-${{ github.run_number }}
+        path: |
+          build_info.txt
+          flutter_*.log
+        retention-days: 7
+        if-no-files-found: ignore
         
     - name: 📊 Build Summary
       run: |
