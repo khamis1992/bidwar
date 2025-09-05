@@ -38,6 +38,19 @@ jobs:
         channel: 'stable'
         cache: true
         
+    - name: 🔧 Configure Flutter Cache
+      run: |
+        echo "🔧 Setting up Flutter cache directory..."
+        mkdir -p $HOME/.flutter
+        
+        # Set Flutter root if needed
+        if [ -f "$RUNNER_TOOL_CACHE/flutter/stable-3.24.3-x64/flutter" ]; then
+          export FLUTTER_ROOT="$RUNNER_TOOL_CACHE/flutter/stable-3.24.3-x64/flutter"
+          export PATH="$FLUTTER_ROOT/bin:$PATH"
+        fi
+        
+        echo "✅ Flutter cache configured"
+        
     - name: 🔧 Flutter Configuration
       run: |
         echo "🔧 Configuring Flutter..."

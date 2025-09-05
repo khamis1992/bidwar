@@ -174,6 +174,28 @@ The project now includes automated APK building through GitHub Actions:
 ```
 
 #### 📋 Manual Build Commands
+
+**Method 1: Comprehensive Build (Recommended)**
+```bash
+# All-in-one build script with Flutter installation
+chmod +x setup_flutter_and_build.sh
+./setup_flutter_and_build.sh -t release
+
+# Debug build
+./setup_flutter_and_build.sh -t debug -c -v
+```
+
+**Method 2: Network-Resilient Build**
+```bash
+# Works even with network restrictions
+chmod +x build_apk_resilient.sh
+./build_apk_resilient.sh -t release
+
+# Clean debug build  
+./build_apk_resilient.sh -c -t debug
+```
+
+**Method 3: Traditional Flutter Commands**
 ```bash
 # Install dependencies
 flutter pub get
@@ -182,10 +204,20 @@ flutter pub get
 flutter build apk --debug --dart-define-from-file=env.json
 
 # Build release APK  
-flutter build apk --release --dart-define-from-file=env.json
+flutter build apk --release --dart-define-from-file=env.json --android-skip-build-dependency-validation
 
 # For iOS (macOS only)
 flutter build ios --release --dart-define-from-file=env.json
+```
+
+**Method 4: Fixed Build Scripts**
+```bash
+# Enhanced version of original script
+chmod +x build_apk_fixed.sh
+./build_apk_fixed.sh -t release -c
+
+# With verbose output
+./build_apk_fixed.sh -t debug -v
 ```
 
 #### 🔧 Environment Configuration

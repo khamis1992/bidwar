@@ -1,4 +1,26 @@
-# APK Build Troubleshooting Guide
+# APK Build Troubleshooting Guide - Complete Solution
+
+## 🎯 Quick Solutions
+
+### ✅ **RECOMMENDED: Use GitHub Actions (Always Works)**
+1. Push your code to the repository
+2. Go to [Actions tab](https://github.com/khamis1992/bidwar/actions)
+3. Download APK from artifacts (or trigger manual build)
+
+### ✅ **LOCAL BUILD: Use Enhanced Scripts**
+```bash
+# Method 1: Network-resilient build
+chmod +x build_apk_resilient.sh
+./build_apk_resilient.sh -t release
+
+# Method 2: Comprehensive build (if network allows)  
+chmod +x setup_flutter_and_build.sh
+./setup_flutter_and_build.sh -t release
+
+# Method 3: Fixed original script
+chmod +x build_apk_fixed.sh  
+./build_apk_fixed.sh -t release -c
+```
 
 This guide helps resolve common issues when building APK files for the BidWar Flutter application.
 
@@ -125,6 +147,37 @@ echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m" >> android/gradle.pro
 
 # Build with specific memory settings
 flutter build apk --release --verbose --dart-define=flutter.build.memory=4096
+```
+
+### 9. Flutter SDK Download Issues ⭐ **MAIN ISSUE IDENTIFIED**
+**Problem:** Flutter Dart SDK downloads fail due to network restrictions
+**Root Cause:** Network infrastructure blocks downloads from storage.googleapis.com  
+**Solutions:**
+```bash
+# BEST SOLUTION: Use GitHub Actions
+# 1. Push code to repository  
+# 2. Download APK from Actions artifacts
+
+# ALTERNATIVE: Use pre-installed Flutter
+export PATH="$PATH:/opt/flutter/bin"
+./build_apk_resilient.sh -t release
+
+# FOR DEVELOPERS: Manual Flutter installation
+# Download Flutter SDK manually and extract to /opt/flutter
+```
+
+### 10. Environment Configuration Issues
+**Problem:** Incorrect Android SDK paths or environment variables
+**Solution:**
+```bash
+# Set correct environment (auto-handled by new scripts)
+export ANDROID_HOME="/usr/local/lib/android/sdk"
+export ANDROID_SDK_ROOT="/usr/local/lib/android/sdk" 
+export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin"
+
+# Verify setup
+echo $ANDROID_HOME
+flutter doctor -v
 ```
 
 ## 📊 Build Verification
