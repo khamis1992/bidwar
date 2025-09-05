@@ -13,7 +13,6 @@ import '../../../services/local_notification_service.dart';
 /// يتبع قواعد BidWar لإدارة الحالة
 class MyWatchlistController extends ChangeNotifier {
   // Dependencies
-  late final GetWatchlistUseCase _getWatchlistUseCase;
   late final ToggleWatchlistUseCase _toggleWatchlistUseCase;
 
   // State

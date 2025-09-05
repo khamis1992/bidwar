@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/app_export.dart';
+import '../../../services/auth_service.dart';
 import '../auth_screen.dart';
 
 /// Auth Form Widget
@@ -17,8 +18,7 @@ class AuthFormWidget extends StatefulWidget {
     required String password,
     String? fullName,
     bool useMagicLink,
-  })
-  onSubmit;
+  }) onSubmit;
 
   const AuthFormWidget({
     super.key,
@@ -55,10 +55,9 @@ class _AuthFormWidgetState extends State<AuthFormWidget> {
     widget.onSubmit(
       email: _emailController.text.trim(),
       password: _passwordController.text,
-      fullName:
-          widget.authMode == AuthMode.register
-              ? _fullNameController.text.trim()
-              : null,
+      fullName: widget.authMode == AuthMode.register
+          ? _fullNameController.text.trim()
+          : null,
       useMagicLink: _useMagicLink,
     );
   }
@@ -160,10 +159,9 @@ class _AuthFormWidgetState extends State<AuthFormWidget> {
               decoration: InputDecoration(
                 labelText: 'Password',
                 prefixIcon: Icon(Icons.lock_outline),
-                hintText:
-                    widget.authMode == AuthMode.register
-                        ? 'Create a strong password'
-                        : 'Enter your password',
+                hintText: widget.authMode == AuthMode.register
+                    ? 'Create a strong password'
+                    : 'Enter your password',
                 suffixIcon: IconButton(
                   onPressed: () {
                     setState(() {
@@ -233,25 +231,24 @@ class _AuthFormWidgetState extends State<AuthFormWidget> {
                 ),
                 elevation: 2,
               ),
-              child:
-                  widget.isLoading
-                      ? SizedBox(
-                        width: 5.w,
-                        height: 5.w,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                      )
-                      : Text(
-                        _getButtonText(),
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
+              child: widget.isLoading
+                  ? SizedBox(
+                      width: 5.w,
+                      height: 5.w,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Colors.white,
                         ),
                       ),
+                    )
+                  : Text(
+                      _getButtonText(),
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
             ),
           ),
 
@@ -292,61 +289,60 @@ class _AuthFormWidgetState extends State<AuthFormWidget> {
 
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Reset Password'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Enter your email address and we\'ll send you a password reset link.',
-                  style: TextStyle(fontSize: 12.sp),
-                ),
-                SizedBox(height: 3.h),
-                TextFormField(
-                  controller: emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email Address',
-                    prefixIcon: Icon(Icons.email_outlined),
-                    hintText: 'Enter your email',
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                ),
-              ],
+      builder: (context) => AlertDialog(
+        title: Text('Reset Password'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Enter your email address and we\'ll send you a password reset link.',
+              style: TextStyle(fontSize: 12.sp),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Cancel'),
+            SizedBox(height: 3.h),
+            TextFormField(
+              controller: emailController,
+              decoration: InputDecoration(
+                labelText: 'Email Address',
+                prefixIcon: Icon(Icons.email_outlined),
+                hintText: 'Enter your email',
               ),
-              ElevatedButton(
-                onPressed: () async {
-                  if (emailController.text.trim().isEmpty) return;
-
-                  try {
-                    await AuthService.instance.resetPassword(
-                      emailController.text.trim(),
-                    );
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Password reset link sent to your email'),
-                        backgroundColor: AppTheme.successLight,
-                      ),
-                    );
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to send reset link: $e'),
-                        backgroundColor: AppTheme.errorLight,
-                      ),
-                    );
-                  }
-                },
-                child: Text('Send Reset Link'),
-              ),
-            ],
+              keyboardType: TextInputType.emailAddress,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
           ),
+          ElevatedButton(
+            onPressed: () async {
+              if (emailController.text.trim().isEmpty) return;
+
+              try {
+                await AuthService.instance.resetPassword(
+                  emailController.text.trim(),
+                );
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Password reset link sent to your email'),
+                    backgroundColor: AppTheme.successLight,
+                  ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Failed to send reset link: $e'),
+                    backgroundColor: AppTheme.errorLight,
+                  ),
+                );
+              }
+            },
+            child: Text('Send Reset Link'),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -173,9 +173,7 @@ class CreateAuctionController extends ChangeNotifier {
             'auction_${DateTime.now().millisecondsSinceEpoch}_$i.jpg';
 
         // رفع الصورة إلى bucket: auctions
-        final response = await _supabaseClient.storage
-            .from('auctions')
-            .upload(fileName, file);
+        await _supabaseClient.storage.from('auctions').upload(fileName, file);
 
         // الحصول على URL العام
         final imageUrl =
@@ -211,8 +209,8 @@ class CreateAuctionController extends ChangeNotifier {
         imageUrls = await uploadImages();
       }
 
-      // تحديد حالة المزاد
-      final auctionStatus = _determineAuctionStatus();
+      // تحديد حالة المزاد (يتم تعيينها تلقائياً في قاعدة البيانات)
+      // final auctionStatus = _determineAuctionStatus();
 
       // إنشاء معاملات المزاد
       final params = CreateAuctionParams.complete(
@@ -242,19 +240,6 @@ class CreateAuctionController extends ChangeNotifier {
       return CreateAuctionResult.failure('Failed to create auction: $e');
     } finally {
       _setCreating(false);
-    }
-  }
-
-  /// تحديد حالة المزاد بناءً على التوقيت
-  String _determineAuctionStatus() {
-    if (_startTime == null) return 'upcoming';
-
-    final now = DateTime.now();
-
-    if (_startTime!.isBefore(now) || _startTime!.isAtSameMomentAs(now)) {
-      return 'live'; // يبدأ الآن أو بدأ بالفعل
-    } else {
-      return 'upcoming'; // سيبدأ لاحقاً
     }
   }
 

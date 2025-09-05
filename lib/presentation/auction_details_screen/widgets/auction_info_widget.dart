@@ -250,65 +250,6 @@ class AuctionInfoWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusBadge() {
-    Color badgeColor;
-    String statusText;
-    IconData statusIcon;
-
-    switch (auction.status) {
-      case AuctionStatus.live:
-        badgeColor = AppTheme.successLight;
-        statusText = 'LIVE';
-        statusIcon = Icons.flash_on;
-        break;
-      case AuctionStatus.upcoming:
-        badgeColor = AppTheme.warningLight;
-        statusText = 'UPCOMING';
-        statusIcon = Icons.schedule;
-        break;
-      case AuctionStatus.ended:
-        badgeColor = AppTheme.textSecondaryLight;
-        statusText = 'ENDED';
-        statusIcon = Icons.flag;
-        break;
-      case AuctionStatus.cancelled:
-        badgeColor = AppTheme.errorLight;
-        statusText = 'CANCELLED';
-        statusIcon = Icons.cancel;
-        break;
-    }
-
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
-      decoration: BoxDecoration(
-        color: badgeColor,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(statusIcon, size: 4.w, color: Colors.white),
-          SizedBox(width: 2.w),
-          Text(
-            statusText,
-            style: TextStyle(
-              fontSize: 11.sp,
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   bool _hasAdditionalInfo() {
     return auction.condition != null ||
         auction.brand != null ||

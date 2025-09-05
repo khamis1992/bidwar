@@ -200,9 +200,7 @@ class WatchlistRemoteDataSourceImpl implements WatchlistRemoteDataSource {
           .order('created_at', ascending: false)
           .limit(limit);
 
-      return response
-          .map((data) => WatchlistModel.fromMap(data as Map<String, dynamic>))
-          .toList();
+      return response.map((data) => WatchlistModel.fromMap(data)).toList();
     } catch (e) {
       throw Exception('Failed to get active watchlist items: $e');
     }

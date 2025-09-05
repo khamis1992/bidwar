@@ -78,7 +78,7 @@ class AuctionRemoteDataSourceImpl implements AuctionRemoteDataSource {
 
       // تطبيق الفلاتر
       if (activeOnly == true) {
-        supabaseQuery = supabaseQuery.in_('status', ['upcoming', 'live']);
+        supabaseQuery = supabaseQuery.inFilter('status', ['upcoming', 'live']);
       }
 
       if (categoryId != null) {
@@ -237,13 +237,11 @@ class AuctionRemoteDataSourceImpl implements AuctionRemoteDataSource {
             bid_count:bids(count)
           ''')
           .eq('featured', true)
-          .in_('status', ['upcoming', 'live'])
+          .inFilter('status', ['upcoming', 'live'])
           .order('created_at', ascending: false)
           .limit(limit);
 
-      return response
-          .map((data) => AuctionModel.fromMap(data as Map<String, dynamic>))
-          .toList();
+      return response.map((data) => AuctionModel.fromMap(data)).toList();
     } catch (e) {
       throw Exception('Failed to get featured auctions: $e');
     }
@@ -290,7 +288,7 @@ class AuctionRemoteDataSourceImpl implements AuctionRemoteDataSource {
           ),
           callback: (payload) {
             final updatedAuction = AuctionModel.fromMap(
-              payload.newRecord as Map<String, dynamic>,
+              payload.newRecord,
             );
             onUpdate(updatedAuction);
           },

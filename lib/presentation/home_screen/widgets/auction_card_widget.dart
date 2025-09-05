@@ -120,7 +120,7 @@ class _AuctionCardWidgetState extends State<AuctionCardWidget>
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   image: DecorationImage(
-                    image: NetworkImage(auction.mainImage),
+                    image: NetworkImage(widget.auction.mainImage),
                     fit: BoxFit.cover,
                     onError: (exception, stackTrace) {
                       // TODO: معالجة خطأ تحميل الصورة
@@ -147,7 +147,7 @@ class _AuctionCardWidgetState extends State<AuctionCardWidget>
                     ),
 
                     // Featured badge
-                    if (auction.featured)
+                    if (widget.auction.featured)
                       Positioned(
                         top: 2.w,
                         right: 2.w,
@@ -179,7 +179,7 @@ class _AuctionCardWidgetState extends State<AuctionCardWidget>
                       ),
 
                     // Time remaining (للمزادات المباشرة)
-                    if (auction.isLive)
+                    if (widget.auction.isLive)
                       Positioned(
                         bottom: 2.w,
                         left: 2.w,
@@ -189,7 +189,7 @@ class _AuctionCardWidgetState extends State<AuctionCardWidget>
                             vertical: 1.w,
                           ),
                           decoration: BoxDecoration(
-                            color: auction.isEndingSoon
+                            color: widget.auction.isEndingSoon
                                 ? AppTheme.errorLight
                                 : AppTheme.successLight,
                             borderRadius: BorderRadius.circular(6),
@@ -200,7 +200,8 @@ class _AuctionCardWidgetState extends State<AuctionCardWidget>
                               Icon(Icons.timer, size: 3.w, color: Colors.white),
                               SizedBox(width: 1.w),
                               Text(
-                                _formatTimeRemaining(auction.timeRemaining),
+                                _formatTimeRemaining(
+                                    widget.auction.timeRemaining),
                                 style: TextStyle(
                                   fontSize: 9.sp,
                                   color: Colors.white,
@@ -219,7 +220,7 @@ class _AuctionCardWidgetState extends State<AuctionCardWidget>
 
               // عنوان المزاد
               Text(
-                auction.title,
+                widget.auction.title,
                 style: TextStyle(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.w600,
@@ -241,7 +242,7 @@ class _AuctionCardWidgetState extends State<AuctionCardWidget>
                   ),
                   SizedBox(width: 1.w),
                   Text(
-                    auction.sellerName,
+                    widget.auction.sellerName,
                     style: TextStyle(
                       fontSize: 11.sp,
                       color: AppTheme.textSecondaryLight,
@@ -257,7 +258,7 @@ class _AuctionCardWidgetState extends State<AuctionCardWidget>
                   SizedBox(width: 1.w),
                   Expanded(
                     child: Text(
-                      auction.categoryName,
+                      widget.auction.categoryName,
                       style: TextStyle(
                         fontSize: 11.sp,
                         color: AppTheme.textSecondaryLight,
@@ -287,7 +288,7 @@ class _AuctionCardWidgetState extends State<AuctionCardWidget>
                         ),
                       ),
                       Text(
-                        '\$${auction.currentPrice}',
+                        '\$${widget.auction.currentPrice}',
                         style: TextStyle(
                           fontSize: 18.sp,
                           color: AppTheme.primaryLight,
@@ -308,7 +309,7 @@ class _AuctionCardWidgetState extends State<AuctionCardWidget>
                         ),
                       ),
                       Text(
-                        '${auction.totalBids}',
+                        '${widget.auction.totalBids}',
                         style: TextStyle(
                           fontSize: 16.sp,
                           color: AppTheme.secondaryLight,
@@ -321,13 +322,13 @@ class _AuctionCardWidgetState extends State<AuctionCardWidget>
               ),
 
               // Progress bar للوقت (للمزادات المباشرة)
-              if (auction.isLive) ...[
+              if (widget.auction.isLive) ...[
                 SizedBox(height: 3.w),
                 LinearProgressIndicator(
-                  value: auction.timeProgressPercentage,
+                  value: widget.auction.timeProgressPercentage,
                   backgroundColor: AppTheme.borderLight,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    auction.isEndingSoon
+                    widget.auction.isEndingSoon
                         ? AppTheme.errorLight
                         : AppTheme.successLight,
                   ),
@@ -345,7 +346,7 @@ class _AuctionCardWidgetState extends State<AuctionCardWidget>
     Color badgeColor;
     String statusText;
 
-    switch (auction.status) {
+    switch (widget.auction.status) {
       case AuctionStatus.live:
         badgeColor = AppTheme.successLight;
         statusText = 'LIVE';

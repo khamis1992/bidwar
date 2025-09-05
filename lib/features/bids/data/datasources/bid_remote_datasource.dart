@@ -240,7 +240,7 @@ class BidRemoteDataSourceImpl implements BidRemoteDataSource {
             try {
               // الحصول على بيانات المزايدة الكاملة مع العلاقات
               final bidData = await getBid(
-                payload.newRecord!['id'] as String,
+                payload.newRecord['id'] as String,
               );
               if (bidData != null) {
                 onNewBid(bidData);

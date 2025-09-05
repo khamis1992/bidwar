@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../features/auctions/data/datasources/auction_remote_datasource.dart';
 import '../../../features/auctions/data/repositories/auction_repository_impl.dart';
