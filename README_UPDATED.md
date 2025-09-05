@@ -98,19 +98,36 @@
 
 ## 🔧 الإعداد السريع
 
-### 1. إعداد البيئة (مرة واحدة)
+### 1. إعداد متغيرات البيئة
+```bash
+# نسخ نموذج البيئة
+cp env.json.example env.json
+
+# تحرير الملف وإضافة قيم Supabase الحقيقية
+nano env.json
+```
+
+**محتوى env.json:**
+```json
+{
+  "SUPABASE_URL": "https://your-project.supabase.co",
+  "SUPABASE_ANON_KEY": "your-anonymous-key-here"
+}
+```
+
+### 2. إعداد البيئة (مرة واحدة)
 ```bash
 chmod +x setup_development_environment.sh
 ./setup_development_environment.sh
 ```
 
-### 2. بناء APK
+### 3. بناء APK مع متغيرات البيئة
 ```bash
 chmod +x update_and_build.sh
 ./update_and_build.sh
 ```
 
-### 3. التحقق من البيئة
+### 4. التحقق من البيئة
 ```bash
 /home/ubuntu/validate_environment.sh
 ```
@@ -130,8 +147,128 @@ flutter clean
 # 2. الحصول على التبعيات
 flutter pub get
 
-# 3. بناء APK
+# 3. بناء APK مع متغيرات البيئة
 flutter build apk --release --dart-define-from-file=env.json --android-skip-build-dependency-validation
+```
+
+## 🌍 إدارة متغيرات البيئة
+
+### 📄 ملف env.json
+
+يستخدم التطبيق ملف `env.json` لتخزين متغيرات البيئة مثل مفاتيح Supabase.
+
+#### إنشاء ملف env.json
+
+```bash
+# 1. نسخ النموذج
+cp env.json.example env.json
+
+# 2. تحرير الملف
+nano env.json  # أو أي محرر نصوص آخر
+```
+
+#### محتوى الملف المطلوب
+
+```json
+{
+  "SUPABASE_URL": "https://your-project-id.supabase.co",
+  "SUPABASE_ANON_KEY": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+}
+```
+
+#### الحصول على قيم Supabase
+
+1. انتقل إلى [Supabase Dashboard](https://app.supabase.com/)
+2. اختر مشروعك
+3. انتقل إلى **Settings** → **API**
+4. انسخ:
+   - **Project URL** → `SUPABASE_URL`
+   - **anon public** key → `SUPABASE_ANON_KEY`
+
+### 🚀 تشغيل التطبيق
+
+#### التطوير (Development)
+```bash
+# تشغيل عادي مع متغيرات البيئة
+flutter run --dart-define-from-file=env.json
+
+# تشغيل في وضع debug مع hot reload
+flutter run --debug --dart-define-from-file=env.json
+
+# تشغيل على جهاز محدد
+flutter run -d <device-id> --dart-define-from-file=env.json
+```
+
+#### البناء (Build)
+```bash
+# بناء APK للإنتاج
+flutter build apk --release --dart-define-from-file=env.json
+
+# بناء APK للتطوير
+flutter build apk --debug --dart-define-from-file=env.json
+
+# بناء App Bundle للـ Play Store
+flutter build appbundle --release --dart-define-from-file=env.json
+```
+
+### ⚠️ تنبيهات أمنية
+
+#### ❌ لا تفعل:
+- **لا ترفع** ملف `env.json` إلى GitHub أو أي مستودع عام
+- **لا تشارك** مفاتيح Supabase في الكود أو الوثائق
+- **لا تضع** المفاتيح في ملفات التكوين العامة
+
+#### ✅ افعل:
+- استخدم `env.json.example` كنموذج فقط (بدون قيم حقيقية)
+- احتفظ بـ `env.json` محلياً فقط
+- استخدم GitHub Secrets للـ CI/CD
+- راجع ملف `.gitignore` للتأكد من استبعاد `env.json`
+
+### 🔍 استكشاف مشاكل البيئة
+
+#### المشكلة: "Environment variables not found"
+```bash
+# التحقق من وجود الملف
+ls -la env.json
+
+# التحقق من محتوى الملف
+cat env.json
+
+# التأكد من صحة JSON
+python3 -m json.tool env.json
+```
+
+#### المشكلة: "Invalid Supabase configuration"
+```bash
+# التحقق من صحة URL
+echo $SUPABASE_URL  # يجب أن يبدأ بـ https://
+
+# التحقق من طول المفتاح
+echo $SUPABASE_ANON_KEY | wc -c  # يجب أن يكون طويل (عادة 200+ حرف)
+```
+
+#### المشكلة: التطبيق يعمل في "Demo Mode"
+هذا يعني أن متغيرات البيئة غير صحيحة أو غير موجودة:
+
+1. تحقق من وجود `env.json`
+2. تحقق من صحة القيم
+3. تأكد من استخدام `--dart-define-from-file=env.json`
+4. راجع رسائل التشخيص في الكونسول
+
+### 📋 أوامر سريعة
+
+```bash
+# إنشاء env.json من النموذج
+cp env.json.example env.json
+
+# تشغيل التطبيق مع البيئة
+flutter run --dart-define-from-file=env.json
+
+# بناء APK مع البيئة
+flutter build apk --release --dart-define-from-file=env.json
+
+# التحقق من حالة البيئة
+flutter run --dart-define-from-file=env.json | grep "Environment"
 ```
 
 ## 📂 هيكل الملفات الجديد

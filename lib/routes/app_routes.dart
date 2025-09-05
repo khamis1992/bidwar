@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../presentation/admin_dashboard_overview/admin_dashboard_overview.dart';
 import '../presentation/advanced_live_stream_admin_panel/advanced_live_stream_admin_panel.dart';
-import '../presentation/ai_powered_stream_recommendations_engine/ai_powered_stream_recommendations_engine.dart';
 import '../presentation/auction_browse_screen/auction_browse_screen.dart';
-import '../presentation/auction_detail_screen/auction_detail_screen.dart';
 import '../presentation/auction_management_panel/auction_management_panel.dart';
 import '../presentation/creator_commission_dashboard/creator_commission_dashboard.dart';
 import '../presentation/credit_management_screen/credit_management_screen.dart';
@@ -22,10 +20,19 @@ import '../presentation/tik_tok_style_auction_browse_screen/tik_tok_style_auctio
 import '../presentation/user_management_console/user_management_console.dart';
 import '../presentation/user_profile_screen/user_profile_screen.dart';
 import '../presentation/watchlist_screen/watchlist_screen.dart';
+import '../presentation/auth_screen/auth_screen.dart';
+import '../presentation/home_screen/home_screen.dart';
+import '../presentation/auction_details_screen/auction_details_screen.dart';
+import '../presentation/create_auction_screen/create_auction_screen.dart';
+import '../presentation/my_watchlist_screen/my_watchlist_screen.dart';
 
 class AppRoutes {
   static const String splash = '/splash';
   static const String onboarding = '/onboarding';
+  static const String auth = '/auth';
+  static const String home = '/home';
+  static const String createAuction = '/create-auction';
+  static const String myWatchlist = '/my-watchlist';
   static const String login = '/login';
   static const String registration = '/registration';
   static const String auctionBrowse = '/auction-browse';
@@ -44,22 +51,42 @@ class AppRoutes {
   static const String auctionManagement = '/auction-management';
   static const String advancedLiveStreamAdmin = '/advanced-live-stream-admin';
   static const String productSelectionScreen = '/product-selection-screen';
-  static const String creatorCommissionDashboard = '/creator-commission-dashboard';
-  static const String enhancedLiveStreamCreationScreen = '/enhanced-live-stream-creation-screen';
+  static const String creatorCommissionDashboard =
+      '/creator-commission-dashboard';
+  static const String enhancedLiveStreamCreationScreen =
+      '/enhanced-live-stream-creation-screen';
 
   static Map<String, WidgetBuilder> routes = {
     splash: (context) => const SplashScreen(),
     onboarding: (context) => const OnboardingFlow(),
+    auth: (context) => const AuthScreen(),
+    home: (context) => const HomeScreen(),
+    createAuction: (context) => const CreateAuctionScreen(),
+    myWatchlist: (context) => const MyWatchlistScreen(),
     login: (context) => const LoginScreen(),
     registration: (context) => const RegistrationScreen(),
     auctionBrowse: (context) => const AuctionBrowseScreen(),
-    tikTokStyleAuctionBrowse: (context) => const TikTokStyleAuctionBrowseScreen(),
-    auctionDetail: (context) => const AuctionDetailScreen(),
+    tikTokStyleAuctionBrowse: (context) =>
+        const TikTokStyleAuctionBrowseScreen(),
+    auctionDetail: (context) {
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
+              {};
+      final auctionId = args['auctionId'] as String?;
+
+      if (auctionId == null) {
+        return const Scaffold(
+          body: Center(child: Text('Auction ID is required')),
+        );
+      }
+
+      return AuctionDetailsScreen(auctionId: auctionId);
+    },
     liveAuctionStream: (context) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ?? {};
-      return LiveAuctionStreamScreen(
-        streamId: args['streamId'] ?? 'default',
-      );
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
+              {};
+      return LiveAuctionStreamScreen(streamId: args['streamId'] ?? 'default');
     },
     liveStreamCreation: (context) => LiveStreamCreationScreen(),
     watchlist: (context) => WatchlistScreen(),
@@ -67,20 +94,24 @@ class AppRoutes {
     creditManagement: (context) => CreditManagementScreen(),
     liveStreamAnalytics: (context) => LiveStreamAnalyticsDashboard(),
     sellerRatingReview: (context) => SellerRatingReviewSystem(),
-    aiStreamRecommendations: (context) => AiPoweredStreamRecommendationsEngine(),
+    aiStreamRecommendations: (context) =>
+        AiPoweredStreamRecommendationsEngine(),
     adminDashboard: (context) => AdminDashboardOverview(),
     userManagement: (context) => UserManagementConsole(),
     auctionManagement: (context) => AuctionManagementPanel(),
     advancedLiveStreamAdmin: (context) => AdvancedLiveStreamAdminPanel(),
     productSelectionScreen: (context) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ?? {};
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
+              {};
       return ProductSelectionScreen(
         userTier: args['userTier'] ?? 'bronze',
         creditBalance: args['creditBalance'] ?? 0,
       );
     },
     creatorCommissionDashboard: (context) => CreatorCommissionDashboard(),
-    enhancedLiveStreamCreationScreen: (context) => EnhancedLiveStreamCreationScreen(),
+    enhancedLiveStreamCreationScreen: (context) =>
+        EnhancedLiveStreamCreationScreen(),
   };
 
   Route<dynamic> generateRoute(RouteSettings settings) {
@@ -88,10 +119,7 @@ class AppRoutes {
     final routeBuilder = routes[settings.name];
 
     if (routeBuilder != null) {
-      return MaterialPageRoute(
-        builder: routeBuilder,
-        settings: settings,
-      );
+      return MaterialPageRoute(builder: routeBuilder, settings: settings);
     }
 
     // Fallback route
