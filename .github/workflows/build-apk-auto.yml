@@ -84,7 +84,7 @@ jobs:
       run: flutter analyze --no-fatal-infos || true
       
     - name: 🧪 Run Tests
-      run: flutter test --no-sound-null-safety || true
+      run: flutter test || true
       
     - name: 🏗️ Build APK
       run: |
