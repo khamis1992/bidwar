@@ -1,4 +1,3 @@
-
 import '../models/auction_item.dart';
 import '../models/recommendation.dart';
 import './supabase_service.dart';
@@ -8,7 +7,8 @@ class AIRecommendationService {
 
   /// Get personalized recommendations based on discovery mode
   Future<List<Recommendation>> getPersonalizedRecommendations(
-      String discoveryMode) async {
+    String discoveryMode,
+  ) async {
     try {
       final userId = _client.auth.currentUser?.id;
       if (userId == null) throw Exception('User not authenticated');
@@ -20,8 +20,10 @@ class AIRecommendationService {
 
       switch (discoveryMode) {
         case 'similar_to_watched':
-          results =
-              await _getSimilarToWatchedRecommendations(userId, userPrefs);
+          results = await _getSimilarToWatchedRecommendations(
+            userId,
+            userPrefs,
+          );
           break;
         case 'trending_now':
           results = await _getTrendingRecommendations();
@@ -49,8 +51,9 @@ class AIRecommendationService {
       }
 
       // Sort by confidence score
-      recommendations
-          .sort((a, b) => b.confidenceScore.compareTo(a.confidenceScore));
+      recommendations.sort(
+        (a, b) => b.confidenceScore.compareTo(a.confidenceScore),
+      );
 
       // Store recommendation history
       await _storeRecommendationHistory(recommendations);
@@ -58,7 +61,8 @@ class AIRecommendationService {
       return recommendations.take(20).toList(); // Limit to top 20
     } catch (e) {
       throw Exception(
-          'Failed to get personalized recommendations: ${e.toString()}');
+        'Failed to get personalized recommendations: ${e.toString()}',
+      );
     }
   }
 
@@ -68,11 +72,12 @@ class AIRecommendationService {
       final userId = _client.auth.currentUser?.id;
       if (userId == null) throw Exception('User not authenticated');
 
-      final response = await _client
-          .from('user_preferences')
-          .select()
-          .eq('user_id', userId)
-          .maybeSingle();
+      final response =
+          await _client
+              .from('user_preferences')
+              .select()
+              .eq('user_id', userId)
+              .maybeSingle();
 
       if (response == null) {
         // Create default preferences
@@ -138,10 +143,13 @@ class AIRecommendationService {
 
       // Update recommendation history if this was a click
       if (interactionType == 'click' && context['recommendation_id'] != null) {
-        await _client.from('recommendation_history').update({
-          'is_clicked': true,
-          'clicked_at': DateTime.now().toIso8601String(),
-        }).eq('id', context['recommendation_id']);
+        await _client
+            .from('recommendation_history')
+            .update({
+              'is_clicked': true,
+              'clicked_at': DateTime.now().toIso8601String(),
+            })
+            .eq('id', context['recommendation_id']);
       }
     } catch (e) {
       throw Exception('Failed to track interaction: ${e.toString()}');
@@ -166,7 +174,8 @@ class AIRecommendationService {
       });
     } catch (e) {
       throw Exception(
-          'Failed to submit recommendation feedback: ${e.toString()}');
+        'Failed to submit recommendation feedback: ${e.toString()}',
+      );
     }
   }
 
@@ -197,17 +206,19 @@ class AIRecommendationService {
         .select('category_id, brand')
         .inFilter('id', watchedItemIds);
 
-    final categoryIds = watchedItems
-        .where((item) => item['category_id'] != null)
-        .map((item) => item['category_id'])
-        .toSet()
-        .toList();
+    final categoryIds =
+        watchedItems
+            .where((item) => item['category_id'] != null)
+            .map((item) => item['category_id'])
+            .toSet()
+            .toList();
 
-    final brands = watchedItems
-        .where((item) => item['brand'] != null)
-        .map((item) => item['brand'])
-        .toSet()
-        .toList();
+    final brands =
+        watchedItems
+            .where((item) => item['brand'] != null)
+            .map((item) => item['brand'])
+            .toSet()
+            .toList();
 
     // Find similar items
     var query = _client
@@ -216,8 +227,14 @@ class AIRecommendationService {
         .eq('status', 'live')
         .not('id', 'in', watchedItemIds);
 
+    // Apply category filter if we have preferred categories
     if (categoryIds.isNotEmpty) {
       query = query.inFilter('category_id', categoryIds);
+    }
+
+    // Apply brand filter if we have preferred brands
+    if (brands.isNotEmpty) {
+      query = query.inFilter('brand', brands);
     }
 
     return await query.order('view_count', ascending: false).limit(50);
@@ -229,8 +246,10 @@ class AIRecommendationService {
         .from('auction_items')
         .select('*, categories(*)')
         .eq('status', 'live')
-        .gte('created_at',
-            DateTime.now().subtract(const Duration(days: 7)).toIso8601String())
+        .gte(
+          'created_at',
+          DateTime.now().subtract(const Duration(days: 7)).toIso8601String(),
+        )
         .order('view_count', ascending: false)
         .order('current_highest_bid', ascending: false)
         .limit(50);
@@ -238,7 +257,8 @@ class AIRecommendationService {
 
   /// Get ending soon recommendations
   Future<List<dynamic>> _getEndingSoonRecommendations(
-      Map<String, dynamic> userPrefs) async {
+    Map<String, dynamic> userPrefs,
+  ) async {
     final now = DateTime.now();
     final endingSoon = now.add(const Duration(hours: 24));
 
@@ -262,7 +282,8 @@ class AIRecommendationService {
 
   /// Get new seller recommendations
   Future<List<dynamic>> _getNewSellerRecommendations(
-      Map<String, dynamic> userPrefs) async {
+    Map<String, dynamic> userPrefs,
+  ) async {
     // Get sellers who joined in the last 30 days
     final recentDate = DateTime.now().subtract(const Duration(days: 30));
 
@@ -312,15 +333,18 @@ class AIRecommendationService {
     final priceScore = _calculatePriceScore(auctionItem, userPrefs);
     final trendingScore = _calculateTrendingScore(auctionItem);
     final urgencyScore = _calculateUrgencyScore(auctionItem);
-    final similarityScore =
-        await _calculateSimilarityScore(auctionItem, userId!);
+    final similarityScore = await _calculateSimilarityScore(
+      auctionItem,
+      userId!,
+    );
 
     // Calculate final recommendation score
-    final finalScore = (categoryScore * 0.3 +
-        priceScore * 0.2 +
-        trendingScore * 0.2 +
-        urgencyScore * 0.1 +
-        similarityScore * 0.2);
+    final finalScore =
+        (categoryScore * 0.3 +
+            priceScore * 0.2 +
+            trendingScore * 0.2 +
+            urgencyScore * 0.1 +
+            similarityScore * 0.2);
 
     // Store AI model scores
     await _storeAIModelScores(userId, auctionItem, {
@@ -359,11 +383,12 @@ class AIRecommendationService {
     try {
       if (auctionItem.categoryId == null) return 0.5;
 
-      final category = await _client
-          .from('categories')
-          .select('name')
-          .eq('id', auctionItem.categoryId!)
-          .single();
+      final category =
+          await _client
+              .from('categories')
+              .select('name')
+              .eq('id', auctionItem.categoryId!)
+              .single();
 
       final categoryPrefs =
           userPrefs['category_preferences'] as Map<String, dynamic>? ?? {};
@@ -390,7 +415,9 @@ class AIRecommendationService {
 
   /// Calculate price preference score
   double _calculatePriceScore(
-      AuctionItem auctionItem, Map<String, dynamic> userPrefs) {
+    AuctionItem auctionItem,
+    Map<String, dynamic> userPrefs,
+  ) {
     final minPrice = userPrefs['price_range_min'] as int? ?? 0;
     final maxPrice = userPrefs['price_range_max'] as int? ?? 1000000;
     final currentBid = auctionItem.currentHighestBid;
@@ -433,7 +460,9 @@ class AIRecommendationService {
 
   /// Calculate similarity score based on user interactions
   Future<double> _calculateSimilarityScore(
-      AuctionItem auctionItem, String userId) async {
+    AuctionItem auctionItem,
+    String userId,
+  ) async {
     try {
       // Get user's interaction patterns
       final interactions = await _client
@@ -532,20 +561,24 @@ class AIRecommendationService {
 
   /// Store recommendation history
   Future<void> _storeRecommendationHistory(
-      List<Recommendation> recommendations) async {
+    List<Recommendation> recommendations,
+  ) async {
     try {
       final userId = _client.auth.currentUser?.id;
       if (userId == null) return;
 
-      final historyData = recommendations
-          .map((rec) => {
-                'user_id': userId,
-                'auction_item_id': rec.auctionItem.id,
-                'recommendation_type': rec.type,
-                'confidence_score': rec.confidenceScore,
-                'reasoning': rec.reasoning,
-              })
-          .toList();
+      final historyData =
+          recommendations
+              .map(
+                (rec) => {
+                  'user_id': userId,
+                  'auction_item_id': rec.auctionItem.id,
+                  'recommendation_type': rec.type,
+                  'confidence_score': rec.confidenceScore,
+                  'reasoning': rec.reasoning,
+                },
+              )
+              .toList();
 
       await _client.from('recommendation_history').insert(historyData);
     } catch (e) {

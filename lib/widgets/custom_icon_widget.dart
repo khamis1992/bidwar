@@ -1,13 +1,30 @@
 import 'package:flutter/material.dart';
 
+/// A custom widget that displays Material Design icons by name
+/// 
+/// This widget provides a convenient way to display icons using string names
+/// instead of directly referencing IconData objects.
 class CustomIconWidget extends StatelessWidget {
+  /// The name of the icon to display
   final String iconName;
+  
+  /// The size of the icon (default: 24.0)
   final double size;
+  
+  /// The color of the icon (optional)
   final Color? color;
 
-  const CustomIconWidget(
-      {Key? key, required this.iconName, this.size = 24, this.color})
-      : super(key: key);
+  /// Creates a CustomIconWidget
+  /// 
+  /// [iconName] is required and must match one of the available icon names
+  /// [size] defaults to 24.0 if not specified
+  /// [color] is optional and will use the default icon color if not specified
+  const CustomIconWidget({
+    Key? key, 
+    required this.iconName, 
+    this.size = 24.0, 
+    this.color,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
