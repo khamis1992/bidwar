@@ -75,14 +75,15 @@ echo -e "${BLUE}🔨 BidWar APK Builder - Fixed Version${NC}"
 echo -e "${BLUE}=====================================${NC}"
 
 # Set up environment variables
-export PATH="$PATH:/home/ubuntu/flutter/bin:/usr/lib/android-sdk/cmdline-tools/latest/bin"
-export ANDROID_HOME="/usr/lib/android-sdk"
-export ANDROID_SDK_ROOT="/usr/lib/android-sdk"
+export ANDROID_HOME="/usr/local/lib/android/sdk"
+export ANDROID_SDK_ROOT="/usr/local/lib/android/sdk"
+export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools"
 
 # Check if Flutter is available
 if ! command -v flutter &> /dev/null; then
     echo -e "${RED}❌ Flutter not found in PATH${NC}"
-    echo -e "${YELLOW}Please run the setup script first: /home/ubuntu/setup_flutter_env.sh${NC}"
+    echo -e "${YELLOW}Please run the setup script first: ./setup_flutter_and_build.sh${NC}"
+    echo -e "${YELLOW}Or install Flutter manually and ensure it's in your PATH${NC}"
     exit 1
 fi
 
