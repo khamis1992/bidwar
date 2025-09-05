@@ -27,6 +27,7 @@ class AuctionDetailsController extends ChangeNotifier {
   late final GetBidsForAuctionUseCase _getBidsUseCase;
   late final PlaceBidUseCase _placeBidUseCase;
   late final ToggleWatchlistUseCase _toggleWatchlistUseCase;
+  late final CheckWatchlistStatusUseCase _checkWatchlistStatusUseCase;
 
   // State
   AuctionEntity? _auction;
@@ -73,6 +74,7 @@ class AuctionDetailsController extends ChangeNotifier {
       remoteDataSource: watchlistDataSource,
     );
     _toggleWatchlistUseCase = ToggleWatchlistUseCase(watchlistRepository);
+    _checkWatchlistStatusUseCase = CheckWatchlistStatusUseCase(watchlistRepository);
   }
 
   /// تهيئة صفحة التفاصيل
@@ -127,14 +129,20 @@ class AuctionDetailsController extends ChangeNotifier {
       final user = AuthService.instance.currentUser;
       if (user == null) {
         _isInWatchlist = false;
+        notifyListeners();
         return;
       }
 
-      // TODO: إنشاء CheckWatchlistStatusUseCase واستخدامه
-      _isInWatchlist = false; // مؤقت
+      final params = CheckWatchlistParams(
+        userId: user.id,
+        auctionId: auctionId,
+      );
+      _isInWatchlist = await _checkWatchlistStatusUseCase(params);
       notifyListeners();
     } catch (e) {
       print('Warning: Failed to check watchlist status: $e');
+      _isInWatchlist = false;
+      notifyListeners();
     }
   }
 
