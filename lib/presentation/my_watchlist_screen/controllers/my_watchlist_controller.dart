@@ -13,7 +13,9 @@ import '../../../services/local_notification_service.dart';
 /// يتبع قواعد BidWar لإدارة الحالة
 class MyWatchlistController extends ChangeNotifier {
   // Dependencies
+  late final GetWatchlistUseCase _getWatchlistUseCase;
   late final ToggleWatchlistUseCase _toggleWatchlistUseCase;
+  late final WatchlistRepositoryImpl _watchlistRepository;
 
   // State
   List<WatchlistEntity> _watchlistItems = [];
@@ -38,13 +40,12 @@ class MyWatchlistController extends ChangeNotifier {
 
   void _initializeDependencies() {
     final watchlistDataSource = WatchlistRemoteDataSourceImpl();
-    final watchlistRepository = WatchlistRepositoryImpl(
+    _watchlistRepository = WatchlistRepositoryImpl(
       remoteDataSource: watchlistDataSource,
     );
 
-    // TODO: إنشاء GetWatchlistUseCase
-    // _getWatchlistUseCase = GetWatchlistUseCase(watchlistRepository);
-    _toggleWatchlistUseCase = ToggleWatchlistUseCase(watchlistRepository);
+    _getWatchlistUseCase = GetWatchlistUseCase(_watchlistRepository);
+    _toggleWatchlistUseCase = ToggleWatchlistUseCase(_watchlistRepository);
   }
 
   /// تهيئة صفحة قائمة المتابعة
@@ -72,15 +73,12 @@ class MyWatchlistController extends ChangeNotifier {
       final user = AuthService.instance.currentUser;
       if (user == null) {
         _activeWatchlistItems.clear();
+        notifyListeners();
         return;
       }
 
-      // TODO: استخدام GetWatchlistUseCase عند إنشاؤه
-      // final params = GetWatchlistParams.activeOnly(userId: user.id);
-      // _activeWatchlistItems = await _getWatchlistUseCase(params);
-
-      // مؤقت
-      _activeWatchlistItems = [];
+      final params = GetWatchlistParams.activeOnly(userId: user.id);
+      _activeWatchlistItems = await _getWatchlistUseCase(params);
       notifyListeners();
     } catch (e) {
       _setError('Failed to load active watchlist: $e');
@@ -93,15 +91,12 @@ class MyWatchlistController extends ChangeNotifier {
       final user = AuthService.instance.currentUser;
       if (user == null) {
         _watchlistItems.clear();
+        notifyListeners();
         return;
       }
 
-      // TODO: استخدام GetWatchlistUseCase عند إنشاؤه
-      // final params = GetWatchlistParams(userId: user.id);
-      // _watchlistItems = await _getWatchlistUseCase(params);
-
-      // مؤقت
-      _watchlistItems = [];
+      final params = GetWatchlistParams(userId: user.id);
+      _watchlistItems = await _getWatchlistUseCase(params);
       notifyListeners();
     } catch (e) {
       _setError('Failed to load watchlist: $e');
@@ -145,10 +140,9 @@ class MyWatchlistController extends ChangeNotifier {
         throw Exception('Please sign in to use watchlist');
       }
 
-      // TODO: إنشاء ClearWatchlistUseCase أو استخدام Repository مباشرة
-      // await _clearWatchlistUseCase(user.id);
+      await _watchlistRepository.clearWatchlist(user.id);
 
-      // مؤقت - مسح القوائم المحلية
+      // مسح القوائم المحلية بعد النجاح
       _watchlistItems.clear();
       _activeWatchlistItems.clear();
       notifyListeners();
@@ -215,14 +209,5 @@ class MyWatchlistController extends ChangeNotifier {
   void clearError() {
     _errorMessage = null;
     notifyListeners();
-  }
-}
-
-/// مؤقت - سيتم استبداله بـ GetWatchlistUseCase
-class GetWatchlistUseCase {
-  GetWatchlistUseCase(repository);
-
-  Future<List<WatchlistEntity>> call(params) async {
-    return [];
   }
 }
