@@ -31,12 +31,30 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
         
+    - name: 💾 Cache Flutter SDK
+      uses: actions/cache@v3
+      with:
+        path: /opt/hostedtoolcache/flutter/stable-3.35.2-x64
+        key: flutter-linux-stable-3.35.2-x64-${{ hashFiles('**/pubspec.lock') }}
+        restore-keys: |
+          flutter-linux-stable-3.35.2-x64-
+        fail-on-cache-miss: false
+
+    - name: 💾 Cache Pub Packages  
+      uses: actions/cache@v3
+      with:
+        path: /home/runner/.pub-cache
+        key: flutter-pub-linux-stable-3.35.2-x64-${{ hashFiles('**/pubspec.lock') }}
+        restore-keys: |
+          flutter-pub-linux-stable-3.35.2-x64-
+        fail-on-cache-miss: false
+        
     - name: 📱 Setup Flutter
       uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.35.2'
         channel: 'stable'
-        cache: true
+        cache: false
         
     - name: 🔧 Flutter Configuration
       run: |
@@ -90,9 +108,6 @@ jobs:
         
     - name: 📦 Get Dependencies
       run: |
-        echo "🧹 Cleaning previous dependency resolution..."
-        rm -f pubspec.lock
-        
         echo "📦 Getting Flutter dependencies..."
         flutter pub get
         
