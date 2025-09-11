@@ -129,7 +129,8 @@ class _ProductDetailModalWidgetState extends State<ProductDetailModalWidget> {
                                 gradient: LinearGradient(
                                   colors: [
                                     Colors.green.shade50,
-                                    Colors.green.shade100,
+                                    Colors.green.shade25 ??
+                                        Colors.green.shade50,
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(12.0),

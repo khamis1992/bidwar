@@ -132,15 +132,26 @@ class ConnectivityService {
         return false;
       }
 
-      // Test Supabase connection using the service's built-in check
-      final isConnected = await SupabaseService.checkConnection(
-        timeout: timeout,
-      );
+      // Test Supabase connection using a simple database query with timeout
+      try {
+        final client = SupabaseService.instance.safeClient;
+        if (client == null) {
+          throw Exception('Supabase client not available');
+        }
 
-      _updateStatus(
-        isConnected ? ConnectionStatus.connected : ConnectionStatus.error,
-      );
-      return isConnected;
+        await client
+            .from('categories')
+            .select('id')
+            .limit(1)
+            .timeout(timeout);
+
+        _updateStatus(ConnectionStatus.connected);
+        return true;
+      } catch (e) {
+        print('❌ Supabase connection test failed: $e');
+        _updateStatus(ConnectionStatus.error);
+        return false;
+      }
     } catch (e) {
       print('❌ Supabase connection check failed: $e');
       _updateStatus(ConnectionStatus.error);

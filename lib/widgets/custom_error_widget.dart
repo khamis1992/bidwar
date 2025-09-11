@@ -59,7 +59,7 @@ class CustomErrorWidget extends StatelessWidget {
                   if (canBeBack) {
                     Navigator.of(context).pop();
                   } else {
-                    Navigator.pushNamed(context, AppRoutes.home);
+                    Navigator.pushNamed(context, AppRoutes.initial);
                   }
                 },
                 icon:

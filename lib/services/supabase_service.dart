@@ -5,177 +5,284 @@ import './environment_service.dart';
 
 class SupabaseService {
   static SupabaseService? _instance;
-  static SupabaseService get instance => _instance ??= SupabaseService._();
+  static SupabaseService get instance =>
+      _instance ??= SupabaseService._internal();
 
-  SupabaseService._();
+  SupabaseService._internal();
 
-  static String? _supabaseUrl;
-  static String? _supabaseAnonKey;
-  static bool _isInitialized = false;
+  SupabaseClient? _client;
+  bool _isInitialized = false;
 
-  static bool get isInitialized => _isInitialized;
+  // Safe client access with null check
+  SupabaseClient? get safeClient => _client;
+
+  // Get client with validation
+  SupabaseClient get client {
+    if (_client == null) {
+      throw Exception(
+          'Supabase client is not initialized. Call initialize() first.');
+    }
+    return _client!;
+  }
+
+  // Check if service is initialized
+  static bool get isInitialized => _instance?._isInitialized ?? false;
+
+  // Check if we have valid credentials
   static bool get hasValidCredentials =>
-      _supabaseUrl?.isNotEmpty == true && _supabaseAnonKey?.isNotEmpty == true;
+      EnvironmentService.hasValidSupabaseCredentials();
 
-  // Initialize Supabase with enhanced error handling and environment service
+  // Initialize Supabase with enhanced error handling and validation
   static Future<bool> initialize() async {
     try {
-      print('🔧 Supabase Service: Starting initialization...');
+      print('🔧 SupabaseService: Starting initialization...');
 
-      // First ensure environment service is initialized
-      final envInitialized = await EnvironmentService.initialize();
-      if (!envInitialized) {
-        print('⚠️ Environment Service initialization failed');
-      }
-
-      // Load credentials from environment service
-      await _loadCredentialsFromEnvironment();
-
-      // If no credentials found, try legacy loading methods
-      if (!hasValidCredentials) {
+      // Validate environment configuration first
+      if (!EnvironmentService.hasValidSupabaseCredentials()) {
+        print('❌ Supabase credentials not available or invalid');
         print(
-            '⚠️ No credentials from Environment Service, trying legacy methods...');
-        await _loadEnvironmentVariablesLegacy();
-      }
-
-      // Final validation
-      if (!hasValidCredentials) {
-        print('❌ Supabase credentials not found or invalid');
+            '   - URL configured: ${EnvironmentService.get('SUPABASE_URL')?.isNotEmpty ?? false}');
         print(
-            '   - SUPABASE_URL: ${_supabaseUrl?.isNotEmpty == true ? "✅" : "❌"}');
-        print(
-            '   - SUPABASE_ANON_KEY: ${_supabaseAnonKey?.isNotEmpty == true ? "✅" : "❌"}');
+            '   - Key configured: ${EnvironmentService.get('SUPABASE_ANON_KEY')?.isNotEmpty ?? false}');
         return false;
       }
 
-      // Initialize Supabase
+      final String? supabaseUrl = EnvironmentService.get('SUPABASE_URL');
+      final String? supabaseAnonKey =
+          EnvironmentService.get('SUPABASE_ANON_KEY');
+
+      if (supabaseUrl == null || supabaseAnonKey == null) {
+        print('❌ Supabase credentials are null');
+        return false;
+      }
+
+      print(
+          '🔧 Initializing Supabase with URL: ${supabaseUrl.length > 20 ? '${supabaseUrl.substring(0, 20)}...' : supabaseUrl}');
+
+      // Initialize Supabase Flutter
       await Supabase.initialize(
-        url: _supabaseUrl!,
-        anonKey: _supabaseAnonKey!,
+        url: supabaseUrl,
+        anonKey: supabaseAnonKey,
         debug: kDebugMode,
       );
 
-      _isInitialized = true;
-      print('✅ Supabase initialized successfully');
-      print('   - URL: ${_supabaseUrl}');
-      print('   - App Mode: ${kDebugMode ? "Debug" : "Release"}');
+      // Set up instance
+      _instance ??= SupabaseService._internal();
+      _instance!._client = Supabase.instance.client;
+      _instance!._isInitialized = true;
 
+      // Test the connection to make sure everything works
+      final connectionTest = await _instance!.checkConnection();
+      if (!connectionTest) {
+        print('⚠️ Supabase initialized but connection test failed');
+        // Still return true since initialization succeeded
+      }
+
+      print('✅ Supabase initialized successfully');
       return true;
-    } catch (e) {
-      print('❌ Supabase initialization failed: $e');
-      _isInitialized = false;
+    } catch (e, stackTrace) {
+      print('❌ SupabaseService initialization failed: $e');
+      if (kDebugMode) {
+        print('Stack trace: $stackTrace');
+      }
+
+      // Reset instance on failure
+      _instance?._isInitialized = false;
+      _instance?._client = null;
       return false;
     }
   }
 
-  // Load credentials from the new environment service
-  static Future<void> _loadCredentialsFromEnvironment() async {
-    try {
-      _supabaseUrl = EnvironmentService.get('SUPABASE_URL');
-      _supabaseAnonKey = EnvironmentService.get('SUPABASE_ANON_KEY');
+  // Test connection to Supabase with timeout and error categorization
+  Future<bool> checkConnection({
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    if (_client == null) {
+      print('❌ Cannot check connection: Supabase client is null');
+      return false;
+    }
 
-      print('🔧 Loaded credentials from Environment Service:');
-      print('   - URL: ${_supabaseUrl != null ? "Found" : "Not found"}');
-      print('   - Key: ${_supabaseAnonKey != null ? "Found" : "Not found"}');
+    try {
+      print('🔧 Testing Supabase connection...');
+
+      // Simple query with timeout to test connection
+      final response = await _client!
+          .from('categories')
+          .select('id')
+          .limit(1)
+          .timeout(timeout);
+
+      print('✅ Supabase connection test successful');
+      return true;
     } catch (e) {
-      print('❌ Error loading from Environment Service: $e');
+      final errorMessage = e.toString();
+      print('⚠️ Supabase connection test failed: $errorMessage');
+
+      // Categorize errors for better debugging
+      if (errorMessage.contains('timeout')) {
+        print('   → Error type: Connection timeout');
+      } else if (errorMessage.contains('network')) {
+        print('   → Error type: Network error');
+      } else if (errorMessage.contains('permission')) {
+        print('   → Error type: Permission/RLS error');
+      } else if (errorMessage.contains('relation') ||
+          errorMessage.contains('table')) {
+        print('   → Error type: Database schema issue (missing table)');
+      } else {
+        print('   → Error type: Unknown');
+      }
+
+      return false;
     }
   }
 
-  // Legacy loading method for fallback compatibility
-  static Future<void> _loadEnvironmentVariablesLegacy() async {
+  // Get current session with safe access
+  Session? get currentSession {
     try {
-      // Fallback to --dart-define if env service failed
-      if (_supabaseUrl?.isEmpty != false) {
-        _supabaseUrl = const String.fromEnvironment('SUPABASE_URL');
-      }
-      if (_supabaseAnonKey?.isEmpty != false) {
-        _supabaseAnonKey = const String.fromEnvironment('SUPABASE_ANON_KEY');
-      }
-
-      print('🔧 Legacy credential loading:');
-      print(
-          '   - URL from dart-define: ${_supabaseUrl?.isNotEmpty == true ? "Found" : "Not found"}');
-      print(
-          '   - Key from dart-define: ${_supabaseAnonKey?.isNotEmpty == true ? "Found" : "Not found"}');
-
-      // Clean up any masked/placeholder values
-      if (_supabaseUrl?.contains('Real value exists') == true) {
-        _supabaseUrl = null;
-      }
-      if (_supabaseAnonKey?.contains('Real value exists') == true) {
-        _supabaseAnonKey = null;
-      }
+      return _client?.auth.currentSession;
     } catch (e) {
-      print('❌ Failed to load legacy environment variables: $e');
-    }
-  }
-
-  // Get Supabase client with safety check
-  SupabaseClient get client {
-    if (!_isInitialized) {
-      throw Exception(
-        'Supabase not initialized. Call SupabaseService.initialize() first.',
-      );
-    }
-    return Supabase.instance.client;
-  }
-
-  // Safe client getter that doesn't throw
-  SupabaseClient? get safeClient {
-    try {
-      return _isInitialized ? Supabase.instance.client : null;
-    } catch (e) {
-      print('⚠️ Error accessing Supabase client: $e');
+      print('⚠️ Error getting current session: $e');
       return null;
     }
   }
 
-  // Check if Supabase connection is healthy with enhanced error handling
-  static Future<bool> checkConnection({
-    Duration timeout = const Duration(seconds: 5),
-  }) async {
-    if (!_isInitialized) {
-      print('⚠️ Supabase not initialized for connection check');
-      return false;
-    }
-
+  // Get current user with safe access
+  User? get currentUser {
     try {
-      final client = instance.safeClient;
-      if (client == null) {
-        print('⚠️ Supabase client not available');
-        return false;
-      }
-
-      // Test with a simple query to check database connectivity
-      await client.from('categories').select('id').limit(1).timeout(timeout);
-
-      print('✅ Supabase connection check successful');
-      return true;
+      return _client?.auth.currentUser;
     } catch (e) {
-      String errorMessage = e.toString();
-      if (errorMessage.contains('timeout')) {
-        print('⏰ Supabase connection timeout');
-      } else if (errorMessage.contains('network')) {
-        print('🌐 Network error during Supabase connection check');
-      } else if (errorMessage.contains('unauthorized') ||
-          errorMessage.contains('403')) {
-        print('🔐 Supabase authentication error');
-      } else {
-        print('❌ Supabase connection check failed: $errorMessage');
-      }
+      print('⚠️ Error getting current user: $e');
+      return null;
+    }
+  }
+
+  // Check if user is authenticated
+  bool get isAuthenticated {
+    try {
+      return currentSession != null;
+    } catch (e) {
+      print('⚠️ Error checking authentication status: $e');
       return false;
     }
   }
 
-  // Get initialization status for debugging
-  static Map<String, dynamic> getStatus() {
+  // Sign in with email and password
+  Future<AuthResponse> signInWithPassword({
+    required String email,
+    required String password,
+  }) async {
+    if (_client == null) {
+      throw Exception('Supabase client is not initialized');
+    }
+
+    try {
+      print('🔐 Signing in user with email: $email');
+      final response = await _client!.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      if (response.session != null) {
+        print('✅ User signed in successfully');
+      } else {
+        print('⚠️ Sign in successful but no session created');
+      }
+
+      return response;
+    } catch (e) {
+      print('❌ Sign in failed: $e');
+      rethrow;
+    }
+  }
+
+  // Sign up with email and password
+  Future<AuthResponse> signUp({
+    required String email,
+    required String password,
+    Map<String, dynamic>? data,
+  }) async {
+    if (_client == null) {
+      throw Exception('Supabase client is not initialized');
+    }
+
+    try {
+      print('📝 Registering new user with email: $email');
+      final response = await _client!.auth.signUp(
+        email: email,
+        password: password,
+        data: data,
+      );
+
+      if (response.user != null) {
+        print('✅ User registered successfully');
+      } else {
+        print('⚠️ Registration completed but user is null');
+      }
+
+      return response;
+    } catch (e) {
+      print('❌ Registration failed: $e');
+      rethrow;
+    }
+  }
+
+  // Sign out user
+  Future<void> signOut() async {
+    if (_client == null) {
+      throw Exception('Supabase client is not initialized');
+    }
+
+    try {
+      print('🔐 Signing out user...');
+      await _client!.auth.signOut();
+      print('✅ User signed out successfully');
+    } catch (e) {
+      print('❌ Sign out failed: $e');
+      rethrow;
+    }
+  }
+
+  // Reset password
+  Future<void> resetPassword({required String email}) async {
+    if (_client == null) {
+      throw Exception('Supabase client is not initialized');
+    }
+
+    try {
+      print('🔒 Sending password reset email to: $email');
+      await _client!.auth.resetPasswordForEmail(email);
+      print('✅ Password reset email sent successfully');
+    } catch (e) {
+      print('❌ Password reset failed: $e');
+      rethrow;
+    }
+  }
+
+  // Listen to auth changes
+  Stream<AuthState> get authStateChanges {
+    if (_client == null) {
+      throw Exception('Supabase client is not initialized');
+    }
+    return _client!.auth.onAuthStateChange;
+  }
+
+  // Get status information for debugging
+  Map<String, dynamic> getStatus() {
     return {
-      'initialized': _isInitialized,
-      'has_valid_credentials': hasValidCredentials,
-      'url_available': _supabaseUrl?.isNotEmpty == true,
-      'key_available': _supabaseAnonKey?.isNotEmpty == true,
-      'environment_status': EnvironmentService.getStatus(),
+      'is_initialized': _isInitialized,
+      'has_client': _client != null,
+      'has_credentials': hasValidCredentials,
+      'is_authenticated': isAuthenticated,
+      'current_user_id': currentUser?.id,
+      'session_expires_at': currentSession?.expiresAt,
     };
+  }
+
+  // Dispose resources
+  void dispose() {
+    print('🔧 Disposing SupabaseService...');
+    // Note: We don't dispose the Supabase client itself as it's managed by the Supabase package
+    _isInitialized = false;
+    print('✅ SupabaseService disposed');
   }
 }

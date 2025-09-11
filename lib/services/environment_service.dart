@@ -217,6 +217,10 @@ class EnvironmentService {
         url.startsWith('https://');
   }
 
+  /// Convenient getters for common environment variables
+  static String get supabaseUrl => get('SUPABASE_URL') ?? '';
+  static String get supabaseAnonKey => get('SUPABASE_ANON_KEY') ?? '';
+
   /// Get detailed status for debugging
   static Map<String, dynamic> getStatus() {
     return {

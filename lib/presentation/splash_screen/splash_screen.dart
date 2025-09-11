@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
-import '../../core/network/supabase_client_provider.dart';
-import '../../services/auth_service.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/environment_service.dart';
 import '../../services/supabase_service.dart';
@@ -346,34 +344,22 @@ class _SplashScreenState extends State<SplashScreen>
 
     String nextRoute;
     if (isAuthenticated) {
-      nextRoute = '/home'; // التوجه لصفحة Home الجديدة
+      nextRoute = AppRoutes.auctionBrowse;
     } else if (isFirstTime) {
       nextRoute = AppRoutes.onboarding;
     } else {
-      nextRoute = '/auth'; // التوجه لصفحة Auth الجديدة
+      nextRoute = AppRoutes.login;
     }
 
     Navigator.pushReplacementNamed(context, nextRoute);
   }
 
   bool _checkAuthenticationStatus() {
-    try {
-      // التحقق من الحالة باستخدام AuthService
-      if (AuthService.instance.isLoggedIn) {
-        return true;
-      }
-
-      // في وضع Demo أو عند عدم توفر Supabase
-      if (_canProceedWithoutSupabase ||
-          !SupabaseClientProvider.instance.isInitialized) {
-        return false;
-      }
-
-      return _connectionDetails?['authStatus'] == 'authenticated';
-    } catch (e) {
-      print('Error checking authentication: $e');
+    // In demo mode or when Supabase isn't available, return false
+    if (_canProceedWithoutSupabase || !SupabaseService.isInitialized) {
       return false;
     }
+    return _connectionDetails?['authStatus'] == 'authenticated';
   }
 
   bool _checkFirstTimeUser() {

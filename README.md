@@ -1,9 +1,4 @@
-# BidWar
-
-[![Build APK](https://github.com/khamis1992/bidwar/actions/workflows/build-apk.yml/badge.svg)](https://github.com/khamis1992/bidwar/actions/workflows/build-apk.yml)
-[![CI/CD Pipeline](https://github.com/khamis1992/bidwar/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/khamis1992/bidwar/actions/workflows/ci-cd.yml)
-[![Flutter Version](https://img.shields.io/badge/Flutter-3.24.5-blue.svg)](https://flutter.dev/)
-[![Dart Version](https://img.shields.io/badge/Dart-3.6.0-blue.svg)](https://dart.dev/)
+# Flutter
 
 A modern Flutter-based mobile application utilizing the latest mobile development technologies and tools for building responsive cross-platform applications.
 
@@ -129,78 +124,15 @@ Container(
 ```
 ## 📦 Deployment
 
-### Automated APK Builds with GitHub Actions
+Build the application for production:
 
-The project now includes automated APK building through GitHub Actions:
-
-#### 🤖 Automatic Builds
-- **Push to main/develop**: Automatically triggers APK builds
-- **Pull Requests**: Builds APKs and adds download links to PR comments
-- **Manual Trigger**: Use GitHub Actions UI to build on-demand
-- **Nightly Builds**: Scheduled builds every night at 2 AM UTC
-
-#### 📱 Build Types
-- **Debug APK**: Includes debugging symbols, larger size
-- **Release APK**: Optimized for production, smaller size
-
-#### 🚀 How to Get APK Files
-
-**Method 1: GitHub Actions (Recommended)**
-1. Go to the [Actions tab](https://github.com/khamis1992/bidwar/actions)
-2. Click on the latest "Build APK" or "CI/CD Pipeline" workflow run
-3. Scroll down to "Artifacts" section
-4. Download the APK file (artifacts are kept for 30 days)
-
-**Method 2: Manual Build Trigger**
-1. Go to the [Actions tab](https://github.com/khamis1992/bidwar/actions)
-2. Click on "Build APK" workflow
-3. Click "Run workflow" button
-4. Select build type (debug/release) and click "Run workflow"
-5. Wait for completion and download from artifacts
-
-**Method 3: Local Build Script**
 ```bash
-# Build release APK locally
-./build_apk.sh
+# For Android
+flutter build apk --release
 
-# Build debug APK
-./build_apk.sh -t debug
-
-# Clean build
-./build_apk.sh -c -t release
-
-# Verbose output
-./build_apk.sh -v -t release
+# For iOS
+flutter build ios --release
 ```
-
-#### 📋 Manual Build Commands
-```bash
-# Install dependencies
-flutter pub get
-
-# Build debug APK
-flutter build apk --debug --dart-define-from-file=env.json
-
-# Build release APK  
-flutter build apk --release --dart-define-from-file=env.json
-
-# For iOS (macOS only)
-flutter build ios --release --dart-define-from-file=env.json
-```
-
-#### 🔧 Environment Configuration
-The build system automatically handles environment variables:
-- Uses `env.json` for local builds
-- Uses GitHub Secrets for CI/CD builds
-- Falls back to default values if secrets not configured
-
-#### 📊 Build Features
-- **Automated Testing**: Runs tests before building
-- **Code Analysis**: Checks code quality
-- **Build Caching**: Faster subsequent builds
-- **Artifact Management**: Organized file naming with timestamps
-- **Build Reports**: Detailed build summaries and logs
-- **PR Integration**: Automatic APK links in pull request comments
 
 ## 🙏 Acknowledgments
 - Built with [Rocket.new](https://rocket.new)

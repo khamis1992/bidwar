@@ -116,7 +116,7 @@ class AppTheme {
     ),
 
     // Card theme with subtle elevation
-    cardTheme: CardThemeData(
+    cardTheme: CardTheme(
       color: surfaceLight,
       elevation: 2.0,
       shadowColor: shadowLight,
@@ -315,7 +315,7 @@ class AppTheme {
     ),
 
     // Tab bar theme for navigation
-    tabBarTheme: TabBarThemeData(
+    tabBarTheme: TabBarTheme(
       labelColor: primaryLight,
       unselectedLabelColor: textSecondaryLight,
       indicatorColor: primaryLight,
@@ -428,7 +428,7 @@ class AppTheme {
       iconTheme: IconThemeData(color: onSurfaceDark),
       actionsIconTheme: IconThemeData(color: onSurfaceDark),
     ),
-    cardTheme: CardThemeData(
+    cardTheme: CardTheme(
       color: surfaceDark,
       elevation: 2.0,
       shadowColor: shadowDark,
@@ -603,7 +603,7 @@ class AppTheme {
         fontWeight: FontWeight.w500,
       ),
     ),
-    tabBarTheme: TabBarThemeData(
+    tabBarTheme: TabBarTheme(
       labelColor: primaryDark,
       unselectedLabelColor: textSecondaryDark,
       indicatorColor: primaryDark,
